@@ -1,184 +1,197 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import MapView from "../components/MapView";
-import listings from "../data/listings";
+import { listings } from "../data/listings";
+import { universities, getUniversity } from "../data/universities";
 
-const PROPERTY_TYPES = ["Private Room", "Entire Studio", "Shared Flat"];
-const DISTANCE_OPTIONS = [
-  { key: "walk5", label: "Within 5 min walk" },
-  { key: "transport15", label: "Within 15 min transport" },
-  { key: "miles3", label: "Under 3 miles" },
-];
-const AMENITIES = ["High-speed Wi-Fi", "Laundry in building", "Study Lounge", "Bike Storage"];
-const SORT_OPTIONS = ["Recommended", "Price: Low to High", "Price: High to Low", "Top Rated"];
+const propertyTypes = ["Private Room", "Entire Studio", "Shared Flat"];
 
 export default function SearchResults() {
-  const [searchParams] = useSearchParams();
-  const city = searchParams.get("city") || "Nairobi";
+  const [params] = useSearchParams();
+  const initialCity = params.get("city") || "";
+  const initialQuery = (params.get("q") || "").toLowerCase();
 
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [propertyTypes, setPropertyTypes] = useState([]);
-  const [distances, setDistances] = useState([]);
-  const [amenities, setAmenities] = useState([]);
-  const [sortBy, setSortBy] = useState("Recommended");
-  const [activeId, setActiveId] = useState(null);
+  const [universityId, setUniversityId] = useState("");
+  const [city, setCity] = useState(initialCity);
+  const [maxPrice, setMaxPrice] = useState(30000);
+  const [types, setTypes] = useState([]);
+  const [sort, setSort] = useState("recommended");
+  const [selected, setSelected] = useState(null);
 
-  const typeCounts = useMemo(() => {
-    const counts = {};
-    PROPERTY_TYPES.forEach((t) => {
-      counts[t] = listings.filter((l) => l.propertyType === t).length;
-    });
-    return counts;
-  }, []);
-
-  const toggle = (value, list, setList) => {
-    setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
-  };
+  const toggleType = (t) =>
+    setTypes((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
 
   const filtered = useMemo(() => {
     let result = listings.filter((l) => {
-      if (minPrice && l.price < Number(minPrice)) return false;
-      if (maxPrice && l.price > Number(maxPrice)) return false;
-      if (propertyTypes.length && !propertyTypes.includes(l.propertyType)) return false;
-      if (distances.length && !distances.includes(l.distanceCategory)) return false;
-      if (amenities.length && !amenities.every((a) => l.amenities.includes(a))) return false;
+      const uni = getUniversity(l.universityId);
+      if (city && uni.city !== city) return false;
+      if (universityId && l.universityId !== universityId) return false;
+      if (l.pricePerMonth > maxPrice) return false;
+      if (types.length && !types.includes(l.type)) return false;
+      if (
+        initialQuery &&
+        !`${l.title} ${uni.name} ${l.area}`.toLowerCase().includes(initialQuery)
+      )
+        return false;
       return true;
     });
-
-    if (sortBy === "Price: Low to High") result = [...result].sort((a, b) => a.price - b.price);
-    if (sortBy === "Price: High to Low") result = [...result].sort((a, b) => b.price - a.price);
-    if (sortBy === "Top Rated") result = [...result].sort((a, b) => b.rating - a.rating);
-
+    if (sort === "price-asc") result = [...result].sort((a, b) => a.pricePerMonth - b.pricePerMonth);
+    if (sort === "price-desc") result = [...result].sort((a, b) => b.pricePerMonth - a.pricePerMonth);
+    if (sort === "distance") result = [...result].sort((a, b) => a.distanceKm - b.distanceKm);
+    if (sort === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
     return result;
-  }, [minPrice, maxPrice, propertyTypes, distances, amenities, sortBy]);
+  }, [city, universityId, maxPrice, types, sort, initialQuery]);
+
+  const mapUniversities = universityId ? universities.filter((u) => u.id === universityId) : universities;
+  const mapCenter = universityId
+    ? (() => {
+        const u = getUniversity(universityId);
+        return [u.lat, u.lng];
+      })()
+    : undefined;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr_420px]">
-        {/* Filters sidebar */}
-        <aside>
-          <h2 className="mb-4 text-lg font-bold text-gray-900">Filters</h2>
+    <div className="w-full">
+      <Navbar />
+      <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row">
+        {/* Sidebar filters */}
+        <aside className="w-full lg:w-[320px] shrink-0 p-8 border-r border-line">
+          <h2 className="font-extrabold text-xl text-ink mb-6">Filters</h2>
 
-          <div className="mb-6">
-            <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500">
-              PRICE RANGE (MONTHLY)
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                placeholder="KSh 0"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="w-1/2 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-              <input
-                type="number"
-                placeholder="KSh 120,000"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="w-1/2 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500">
-              PROPERTY TYPE
-            </p>
-            {PROPERTY_TYPES.map((type) => (
-              <label key={type} className="mb-2 flex items-center justify-between text-sm text-gray-700">
-                <span className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={propertyTypes.includes(type)}
-                    onChange={() => toggle(type, propertyTypes, setPropertyTypes)}
-                    className="h-4 w-4 rounded accent-teal-600"
-                  />
-                  {type}
-                </span>
-                <span className="text-gray-400">{typeCounts[type]}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="mb-6">
-            <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500">
-              DISTANCE TO CAMPUS
-            </p>
-            {DISTANCE_OPTIONS.map((opt) => (
-              <label key={opt.key} className="mb-2 flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={distances.includes(opt.key)}
-                  onChange={() => toggle(opt.key, distances, setDistances)}
-                  className="h-4 w-4 rounded accent-teal-600"
-                />
-                {opt.label}
-              </label>
-            ))}
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500">
-              KEY AMENITIES
-            </p>
-            {AMENITIES.map((a) => (
-              <label key={a} className="mb-2 flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={amenities.includes(a)}
-                  onChange={() => toggle(a, amenities, setAmenities)}
-                  className="h-4 w-4 rounded accent-teal-600"
-                />
-                {a}
-              </label>
-            ))}
-          </div>
-        </aside>
-
-        {/* Results list */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Showing {filtered.length} of {listings.length} student hostels in {city}
-            </p>
+          <div className="mb-8">
+            <label className="text-sm font-bold text-ink block mb-2">Near University</label>
             <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700"
+              value={universityId}
+              onChange={(e) => setUniversityId(e.target.value)}
+              className="w-full border border-line rounded-lg p-3 text-sm"
             >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>Sort by: {opt}</option>
+              <option value="">All institutions</option>
+              {universities.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} — {u.city}
+                </option>
               ))}
             </select>
           </div>
 
-          {filtered.length === 0 ? (
-            <p className="text-gray-500">No listings match your filters.</p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {filtered.map((listing) => (
-                <div
-                  key={listing.id}
-                  onMouseEnter={() => setActiveId(listing.id)}
-                  className={`rounded-2xl transition ${
-                    activeId === listing.id ? "ring-2 ring-teal-500" : ""
-                  }`}
-                >
-                  <PropertyCard listing={listing} />
-                </div>
+          <div className="mb-8">
+            <label className="text-sm font-bold text-ink block mb-2">
+              Max Price (KSh / month): {maxPrice.toLocaleString()}
+            </label>
+            <input
+              type="range"
+              min="5000"
+              max="30000"
+              step="500"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              className="w-full accent-brand"
+            />
+          </div>
+
+          <div className="mb-8">
+            <label className="text-sm font-bold text-ink block mb-3">Property Type</label>
+            <div className="flex flex-col gap-3">
+              {propertyTypes.map((t) => (
+                <label key={t} className="flex items-center gap-3 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={types.includes(t)}
+                    onChange={() => toggleType(t)}
+                    className="w-[18px] h-[18px] accent-brand rounded"
+                  />
+                  {t}
+                </label>
               ))}
             </div>
-          )}
+          </div>
+
+          <button
+            onClick={() => {
+              setUniversityId("");
+              setCity("");
+              setMaxPrice(30000);
+              setTypes([]);
+            }}
+            className="text-sm font-semibold text-brand hover:underline"
+          >
+            Clear all filters
+          </button>
+        </aside>
+
+        {/* Listings */}
+        <section className="flex-1 p-8">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <p className="text-sm text-muted">
+              Showing {filtered.length} of {listings.length} student accommodations
+              {city ? ` in ${city}` : ""}
+            </p>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="border border-line rounded-lg px-3 py-2 text-sm font-semibold text-ink"
+            >
+              <option value="recommended">Sort by: Recommended</option>
+              <option value="distance">Closest to campus</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            {filtered.length === 0 && (
+              <p className="text-muted text-sm">No listings match those filters yet — try widening your search.</p>
+            )}
+            {filtered.map((l) => (
+              <div
+                key={l.id}
+                onMouseEnter={() => setSelected(l)}
+                className="flex flex-col sm:flex-row gap-5 border border-line rounded-xl overflow-hidden hover:shadow-md transition"
+              >
+                <img src={l.image} alt={l.title} className="w-full sm:w-[220px] h-[180px] object-cover" />
+                <div className="flex-1 p-5">
+                  <div className="flex items-center justify-between text-sm text-muted mb-2">
+                    <span>{l.area}</span>
+                    <span className="font-semibold text-ink">★ {l.rating}</span>
+                  </div>
+                  <h3 className="font-bold text-ink text-lg mb-2">{l.title}</h3>
+                  <p className="text-xs text-brand font-semibold mb-3">
+                    {l.distanceKm} km from {getUniversity(l.universityId)?.name}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {l.amenities.slice(0, 2).map((a) => (
+                      <span key={a} className="text-xs bg-panel text-muted px-2.5 py-1 rounded-full">
+                        {a}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-extrabold text-ink text-lg">
+                      KSh {l.pricePerMonth.toLocaleString()} <span className="text-sm font-medium text-muted">/ month</span>
+                    </p>
+                    <a
+                      href={`/property/${l.id}`}
+                      className="bg-brand text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-brand-dark transition"
+                    >
+                      View Details
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* Map */}
-        <div className="h-[500px] lg:sticky lg:top-6 lg:h-[calc(100vh-8rem)]">
-          <MapView listings={filtered} activeId={activeId} onMarkerClick={setActiveId} />
+        <div className="w-full lg:w-[480px] h-[500px] lg:h-auto sticky top-20 shrink-0 p-4">
+          <MapView listings={filtered} universities={mapUniversities} center={mapCenter} onSelect={setSelected} />
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

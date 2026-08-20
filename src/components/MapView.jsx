@@ -1,67 +1,66 @@
-import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import { useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import { useEffect } from "react";
 import "leaflet/dist/leaflet.css";
 
-function FitBounds({ listings }) {
+const uniIcon = new L.DivIcon({
+  html: `<div style="background:#1e293b;color:white;font-size:10px;font-weight:700;padding:4px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25)">🎓 UNI</div>`,
+  className: "",
+  iconAnchor: [20, 10],
+});
+
+const listingIcon = (price) =>
+  new L.DivIcon({
+    html: `<div style="background:#0f766e;color:white;font-size:11px;font-weight:800;padding:5px 9px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3)">KSh ${Number(
+      price
+    ).toLocaleString()}</div>`,
+    className: "",
+    iconAnchor: [30, 14],
+  });
+
+function Recenter({ center }) {
   const map = useMap();
   useEffect(() => {
-    if (!listings.length) return;
-    const bounds = L.latLngBounds(listings.map((l) => [l.lat, l.lng]));
-    map.fitBounds(bounds, { padding: [40, 40] });
-  }, [listings, map]);
+    if (center) map.setView(center, map.getZoom());
+  }, [center]);
   return null;
 }
 
-// Renders a price-pill marker, matching the teal/orange badges in the Figma map
-function priceIcon(price, isActive) {
-  return L.divIcon({
-    className: "",
-    html: `<div style="
-      background:${isActive ? "#f97316" : "#0d9488"};
-      color:white;
-      font-weight:600;
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:9999px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.25);
-      white-space:nowrap;
-    ">KSh ${price.toLocaleString()}</div>`,
-    iconSize: [0, 0],
-  });
-}
-
-export default function MapView({ listings = [], activeId, onMarkerClick }) {
-  const navigate = useNavigate();
-  const center = listings.length
-    ? [listings[0].lat, listings[0].lng]
-    : [-1.286389, 36.817223]; // Nairobi fallback
+export default function MapView({ listings = [], universities = [], center, zoom = 13, onSelect }) {
+  const mapCenter = center || (listings[0] ? [listings[0].lat, listings[0].lng] : [-1.2833, 36.8172]);
 
   return (
-    <div className="h-full w-full overflow-hidden rounded-2xl border border-gray-200">
-      <MapContainer center={center} zoom={13} scrollWheelZoom className="h-full w-full">
-        <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <FitBounds listings={listings} />
-
-        {listings.map((listing) => (
-          <Marker
-            key={listing.id}
-            position={[listing.lat, listing.lng]}
-            icon={priceIcon(listing.price, listing.id === activeId)}
-            eventHandlers={{
-              click: () => {
-                onMarkerClick?.(listing.id);
-                navigate(`/accommodation/${listing.id}`);
-              },
-              mouseover: () => onMarkerClick?.(listing.id),
-            }}
-          />
-        ))}
-      </MapContainer>
-    </div>
+    <MapContainer center={mapCenter} zoom={zoom} scrollWheelZoom={false} className="rounded-xl">
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Recenter center={center} />
+      {universities.map((u) => (
+        <Marker key={u.id} position={[u.lat, u.lng]} icon={uniIcon}>
+          <Popup>
+            <strong>{u.name}</strong>
+            <br />
+            {u.city}, Kenya
+          </Popup>
+        </Marker>
+      ))}
+      {listings.map((l) => (
+        <Marker
+          key={l.id}
+          position={[l.lat, l.lng]}
+          icon={listingIcon(l.pricePerMonth)}
+          eventHandlers={{ click: () => onSelect && onSelect(l) }}
+        >
+          <Popup>
+            <strong>{l.title}</strong>
+            <br />
+            {l.area}
+            <br />
+            KSh {l.pricePerMonth.toLocaleString()} / month
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   );
 }
