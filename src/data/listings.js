@@ -141,6 +141,18 @@ export const listings = [
   },
 ];
 
+export function getStoredListings() {
+  try {
+    return JSON.parse(localStorage.getItem("qrib_listings")) || [];
+  } catch {
+    return [];
+  }
+}
+
+export function getAllListings() {
+  return [...listings, ...getStoredListings()];
+}
+
 export function getListing(id) {
-  return listings.find((listing) => listing.id === id);
+  return getAllListings().find((listing) => listing.id === id);
 }
