@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import MapView from "../components/MapView";
-import { listings } from "../data/listings";
+import { getAllListings } from "../data/listings";
 import { universities } from "../data/universities";
 
 export default function SearchResults() {
@@ -15,6 +15,8 @@ export default function SearchResults() {
   const maxPrice = Number(searchParams.get("maxPrice")) || Infinity;
 
   const results = useMemo(() => {
+    const listings = getAllListings();
+
     return listings.filter((listing) => {
       const matchesCity =
         !city || listing.city.toLowerCase() === city.toLowerCase();
