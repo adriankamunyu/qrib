@@ -1,101 +1,208 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { AuthContext } from "./AuthContextValue";
 
-const AuthContext = createContext(null);
-const USERS_KEY = "qrib_users";
-const SESSION_KEY = "qrib_session";
 
-function loadUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-// Seed one demo student + one demo host so login can be tested immediately.
-function ensureSeedUsers() {
-  const users = loadUsers();
-  if (users.length === 0) {
-    const seeded = [
-      { name: "Demo Student", email: "student@university.ac.ke", password: "password123", role: "student" },
-      { name: "Demo Host", email: "host@qrib.co.ke", password: "password123", role: "host" },
-    ];
-    saveUsers(seeded);
-    return seeded;
-  }
-  return users;
-}
+const API_URL = "http://172.29.254.86:5000/api";
+const TOKEN_KEY = "qrib_access_token";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [ready, setReady] = useState(false);
+const [ready, setReady] = useState(
+  () => !localStorage.getItem(TOKEN_KEY)
+);
 
+  // =========================================================
+  // RESTORE EXISTING LOGIN SESSION
+  // =========================================================
   useEffect(() => {
-    ensureSeedUsers();
-    try {
-      const session = JSON.parse(localStorage.getItem(SESSION_KEY));
-      if (session) setUser(session);
-    } catch {
-      /* ignore corrupted session */
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+      return;
     }
-    setReady(true);
+
+    fetch(`${API_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(async (response) => {
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              data.message ||
+              data.msg ||
+              "Session expired"
+          );
+        }
+
+        setUser(data.user);
+      })
+      .catch((error) => {
+        console.error("Session restore error:", error);
+
+        localStorage.removeItem(TOKEN_KEY);
+        setUser(null);
+      })
+      .finally(() => {
+        setReady(true);
+      });
   }, []);
 
-  const login = ({ email, password }) => {
-    const users = loadUsers();
-    const found = users.find(
-      (u) => u.email.toLowerCase() === email.trim().toLowerCase()
-    );
-    if (!found) {
-      return { ok: false, message: "No account found with that email address." };
+  // =========================================================
+  // LOGIN
+  // =========================================================
+  const login = async ({ email, password }) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          ok: false,
+          message:
+            data.error ||
+            data.message ||
+            data.msg ||
+            "Login failed.",
+        };
+      }
+
+      if (!data.access_token) {
+        return {
+          ok: false,
+          message:
+            "Login succeeded but the server did not return an access token.",
+        };
+      }
+
+      // Save JWT
+      localStorage.setItem(TOKEN_KEY, data.access_token);
+
+      // Save user
+      setUser(data.user);
+
+      return {
+        ok: true,
+        user: data.user,
+      };
+    } catch (error) {
+      console.error("Login error:", error);
+
+      return {
+        ok: false,
+        message:
+          "Unable to connect to Qrib server. Make sure the backend is running.",
+      };
     }
-    if (found.password !== password) {
-      return { ok: false, message: "Incorrect password. Please try again." };
-    }
-    const session = { name: found.name, email: found.email, role: found.role };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    setUser(session);
-    return { ok: true };
   };
 
-  const signup = ({ name, email, password, role }) => {
-    if (!name.trim()) return { ok: false, message: "Please enter your full name." };
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return { ok: false, message: "Please enter a valid email address." };
+  // =========================================================
+  // SIGNUP
+  // =========================================================
+  const signup = async ({
+    name,
+    email,
+    password,
+    role,
+  }) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role: role || "student",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          ok: false,
+          message:
+            data.error ||
+            data.message ||
+            data.msg ||
+            "Registration failed.",
+        };
+      }
+
+      // Your backend already returns a JWT after registration.
+      if (!data.access_token) {
+        return {
+          ok: false,
+          message:
+            "Account was created but the server did not return an access token.",
+        };
+      }
+
+      // Save JWT
+      localStorage.setItem(
+        TOKEN_KEY,
+        data.access_token
+      );
+
+      // Save authenticated user
+      setUser(data.user);
+
+      return {
+        ok: true,
+        user: data.user,
+      };
+    } catch (error) {
+      console.error("Registration error:", error);
+
+      return {
+        ok: false,
+        message:
+          "Unable to connect to Qrib server. Make sure the backend is running.",
+      };
     }
-    if (password.length < 6) {
-      return { ok: false, message: "Password must be at least 6 characters." };
-    }
-    const users = loadUsers();
-    if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
-      return { ok: false, message: "An account with this email already exists." };
-    }
-    const newUser = { name, email, password, role: role || "student" };
-    saveUsers([...users, newUser]);
-    const session = { name: newUser.name, email: newUser.email, role: newUser.role };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    setUser(session);
-    return { ok: true };
   };
 
+  // =========================================================
+  // LOGOUT
+  // =========================================================
   const logout = () => {
-    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   };
 
+  // =========================================================
+  // CONTEXT
+  // =========================================================
   return (
-    <AuthContext.Provider value={{ user, ready, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        ready,
+        login,
+        signup,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-}
+// =========================================================

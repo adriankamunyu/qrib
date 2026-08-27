@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { listings } from "../data/listings";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 export default function BookingConfirmation() {
   const { id } = useParams();
