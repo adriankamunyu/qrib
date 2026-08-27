@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { listings } from "../data/listings";
+import { getAllListings } from "../data/listings";
 import { getUniversity } from "../data/universities";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -12,7 +12,7 @@ export default function AccommodationDetails() {
   const { user } = useAuth();
   const { showToast } = useToast();
 
-  const listing = listings.find((item) => item.id === id);
+  const listing = getAllListings().find((listing) => listing.id === id);
 
   if (!listing) {
     return (
