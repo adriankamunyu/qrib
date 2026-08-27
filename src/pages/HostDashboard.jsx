@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { getUniversity } from "../data/universities";
 
 const DEMO_LISTINGS_KEY = "qrib_listings";
@@ -23,11 +23,12 @@ function loadHostListings(email) {
 export default function HostDashboard() {
   const { user } = useAuth();
 
-  const hostListings = useMemo(() => {
-    if (!user?.email) return [];
-    return loadHostListings(user.email);
-  }, [user?.email]);
+  const hostEmail = user?.email;
 
+const hostListings = useMemo(() => {
+  if (!hostEmail) return [];
+   return loadHostListings(hostEmail);
+},  [hostEmail]);
   const activeListings = hostListings.length;
 
   return (

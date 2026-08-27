@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { universities } from "../data/universities";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 
 const amenitiesList = [
   "WiFi",

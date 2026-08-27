@@ -1,16 +1,22 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const dashboardPath =
+    user?.role === "host"
+      ? "/host/dashboard"
+      : "/student/dashboard";
 
   const handleLogout = () => {
     logout();
     setMenuOpen(false);
-    navigate("/");
+    navigate("/login", { replace: true });
   };
 
   const closeMenu = () => {
@@ -18,72 +24,144 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
-      <nav className="max-w-[1440px] mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
-        {/* Logo */}
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+      <nav className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6 lg:px-20">
+
+        {/* LOGO */}
+
         <Link
-          to="/"
+          to={user ? dashboardPath : "/"}
           onClick={closeMenu}
-          className="text-2xl font-extrabold text-brand"
+          className="flex items-center gap-3"
         >
-          Qrib
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/20">
+            <svg
+              width="21"
+              height="21"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+            >
+              <path
+                d="M3 10.5 12 3l9 7.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              <path
+                d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          <span className="text-2xl font-extrabold tracking-tight text-brand">
+            Qrib
+          </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-7">
-          <Link
-            to="/search"
-            className="text-sm font-semibold text-slate-800 hover:text-brand transition"
-          >
-            Find accommodation
-          </Link>
+        {/* DESKTOP */}
 
-          <Link
-            to="/help"
-            className="text-sm font-semibold text-slate-800 hover:text-brand transition"
-          >
-            Help
-          </Link>
+        <div className="hidden items-center gap-7 md:flex">
 
-          {user?.role === "host" && (
-            <Link
-              to="/host/dashboard"
-              className="text-sm font-semibold text-slate-800 hover:text-brand transition"
-            >
-              Host dashboard
-            </Link>
-          )}
-
-          {!user ? (
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center bg-brand text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:opacity-90 transition shadow-sm"
-            >
-              Log in
-            </Link>
-          ) : (
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-semibold text-slate-800">
-                Hi, {user.name.split(" ")[0]}
-              </span>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-sm font-bold text-red-600 hover:text-red-700 transition"
+          {user ? (
+            <>
+              <Link
+                to={dashboardPath}
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
               >
-                Log out
-              </button>
-            </div>
+                Dashboard
+              </Link>
+
+              <Link
+                to="/search"
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+              >
+                Find accommodation
+              </Link>
+
+              {user.role === "student" && (
+                <>
+                  <Link
+                    to="/search"
+                    className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                  >
+                    Saved homes
+                  </Link>
+
+                  <Link
+                    to="/help"
+                    className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                  >
+                    Help
+                  </Link>
+                </>
+              )}
+
+              {user.role === "host" && (
+                <Link
+                  to="/add-property"
+                  className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                >
+                  Add property
+                </Link>
+              )}
+
+              <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
+
+                <Link
+                  to={dashboardPath}
+                  className="text-sm font-bold text-slate-800"
+                >
+                  Hi, {user.name?.split(" ")[0] || "User"}
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-sm font-bold text-red-600 transition hover:text-red-700"
+                >
+                  Log out
+                </button>
+
+              </div>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/search"
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+              >
+                Find accommodation
+              </Link>
+
+              <Link
+                to="/help"
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+              >
+                Help
+              </Link>
+
+              <Link
+                to="/login"
+                className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
+              >
+                Log in
+              </Link>
+            </>
           )}
+
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* MOBILE BUTTON */}
+
         <button
           type="button"
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 text-slate-800 hover:bg-slate-50"
-          aria-label="Toggle navigation menu"
+          onClick={() => setMenuOpen((current) => !current)}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-800 transition hover:bg-slate-50 md:hidden"
+          aria-label="Toggle navigation"
           aria-expanded={menuOpen}
         >
           {menuOpen ? (
@@ -94,59 +172,96 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile Navigation */}
+      {/* MOBILE MENU */}
+
       {menuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white shadow-lg">
-          <div className="px-6 py-5 flex flex-col gap-4">
-            <Link
-              to="/search"
-              onClick={closeMenu}
-              className="text-sm font-semibold text-slate-800 hover:text-brand"
-            >
-              Find accommodation
-            </Link>
+        <div className="border-t border-slate-200 bg-white shadow-xl md:hidden">
+          <div className="flex flex-col gap-4 px-6 py-6">
 
-            <Link
-              to="/help"
-              onClick={closeMenu}
-              className="text-sm font-semibold text-slate-800 hover:text-brand"
-            >
-              Help
-            </Link>
-
-            {user?.role === "host" && (
-              <Link
-                to="/host/dashboard"
-                onClick={closeMenu}
-                className="text-sm font-semibold text-slate-800 hover:text-brand"
-              >
-                Host dashboard
-              </Link>
-            )}
-
-            {!user ? (
-              <Link
-                to="/login"
-                onClick={closeMenu}
-                className="w-full text-center bg-brand text-white px-5 py-3 rounded-lg text-sm font-bold hover:opacity-90 transition"
-              >
-                Log in
-              </Link>
-            ) : (
-              <div className="flex flex-col gap-3 pt-2 border-t border-slate-100">
-                <span className="text-sm font-semibold text-slate-800">
-                  Hi, {user.name.split(" ")[0]}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="text-left text-sm font-bold text-red-600 hover:text-red-700"
+            {user ? (
+              <>
+                <Link
+                  to={dashboardPath}
+                  onClick={closeMenu}
+                  className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800"
                 >
-                  Log out
-                </button>
-              </div>
+                  Dashboard
+                </Link>
+
+                <Link
+                  to="/search"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Find accommodation
+                </Link>
+
+                {user.role === "host" && (
+                  <Link
+                    to="/add-property"
+                    onClick={closeMenu}
+                    className="text-sm font-semibold text-slate-800"
+                  >
+                    Add property
+                  </Link>
+                )}
+
+                <Link
+                  to="/help"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Help
+                </Link>
+
+                <div className="border-t border-slate-100 pt-4">
+
+                  <p className="text-sm font-bold text-slate-900">
+                    {user.name}
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-500">
+                    {user.email}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-4 text-sm font-bold text-red-600"
+                  >
+                    Log out
+                  </button>
+
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/search"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Find accommodation
+                </Link>
+
+                <Link
+                  to="/help"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Help
+                </Link>
+
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="rounded-xl bg-brand px-5 py-3 text-center text-sm font-bold text-white"
+                >
+                  Log in
+                </Link>
+              </>
             )}
+
           </div>
         </div>
       )}
