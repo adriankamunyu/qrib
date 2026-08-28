@@ -1,3 +1,5 @@
+import secrets
+
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import (
@@ -102,7 +104,7 @@ def register():
     ).first()
 
     if existing_username:
-        username = f"{username}_{User.query.count() + 1}"
+        username = f"{username}_{secrets.token_hex(4)}"
 
     # Create user
     user = User(
