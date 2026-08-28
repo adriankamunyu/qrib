@@ -33,10 +33,10 @@ def create_app():
     # JWT
     # ============================================================
 
-    app.config["JWT_SECRET_KEY"] = os.getenv(
-        "JWT_SECRET_KEY",
-        "qrib-development-secret-change-this"
-    )
+    jwt_secret = os.getenv("JWT_SECRET_KEY")
+    if not jwt_secret:
+        raise RuntimeError("JWT_SECRET_KEY environment variable is not set")
+    app.config["JWT_SECRET_KEY"] = jwt_secret
 
     # ============================================================
     # INITIALIZE EXTENSIONS
