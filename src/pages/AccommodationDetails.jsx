@@ -20,7 +20,7 @@ import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 import PropertyWeather from "../components/PropertyWeather";
 
-const API_URL = "http://172.29.254.86:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1400&q=85";
