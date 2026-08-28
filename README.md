@@ -1,45 +1,182 @@
-# Qrib — Student Housing Platform (Kenya)
+# Qrib — Student Accommodation Finder
 
-React + Vite + Tailwind implementation of the Qrib Figma design, localized for Kenya.
+## Project Description
 
-## Run it
+Qrib is a student accommodation finder built with React. The application helps university students discover accommodation, search and filter available properties, view accommodation details, and navigate through a student-focused interface.
 
-```bash
+This project was developed as part of Moringa School Project 1 to demonstrate React component structure, routing, asynchronous data fetching, state management, controlled inputs, dynamic rendering, and responsive UI design.
+
+## Features
+
+- Student accommodation search
+- Dynamic accommodation listings
+- Search and filtering
+- Property details
+- Student dashboard
+- Host dashboard
+- User authentication
+- Protected routes
+- Responsive UI
+- Loading and error states
+- Interactive map
+- External API integration
+
+## Technologies Used
+
+- React
+- Vite
+- JavaScript
+- React Router
+- Tailwind CSS
+- Fetch API
+- Flask
+- SQLAlchemy
+- Leaflet
+- OpenStreetMap
+- Git and GitHub
+
+## API Integration
+
+The React application uses asynchronous JavaScript with the Fetch API.
+
+### Qrib Backend API
+
+The application communicates with the Qrib Flask backend for accommodation and authentication data.
+
+Base URL:
+
+http://172.29.254.86:5000/api
+
+Property endpoint:
+
+GET /api/properties
+
+Property details:
+
+GET /api/properties/:id
+
+Authentication endpoints:
+
+POST /api/auth/login
+POST /api/auth/register
+GET /api/auth/me
+
+### External API
+
+An external public API will be integrated into the React application to satisfy the Moringa Project 1 external API requirement. The API and endpoint will be documented here after integration.
+
+## Routing
+
+React Router is used for application navigation.
+
+Important routes include:
+
+- /
+- /login
+- /search
+- /property/:id
+- /booking/:id
+- /student/dashboard
+- /host
+- /host/dashboard
+- /host/add-property
+
+Protected routes require the appropriate authenticated user role.
+
+## Setup Instructions
+
+### Frontend
+
+Clone the repository:
+
+git clone https://github.com/adriankamunyu/qrib.git
+cd qrib
+
+Install dependencies:
+
 npm install
+
+Start the frontend:
+
 npm run dev
-```
 
-Then open the printed local URL (usually http://localhost:5173).
+The frontend normally runs on:
 
-## What's included
+http://localhost:5173
 
-- **Login / Signup** (`/login`) — real client-side validation, toggle between Log In and Sign Up,
-  password show/hide, role selection (Student / Host), and toast notifications for incorrect
-  credentials, duplicate emails, weak passwords, etc.
-  - Demo accounts: `student@university.ac.ke` / `host@qrib.co.ke`, password `password123`
-- **Homepage** (`/`) — hero search bar, trust signals, featured listings, destination cards, all
-  wired to real navigation (search, filters, footer links, social links).
-- **Search Results** (`/search`) — filter by Kenyan university, price (KSh), property type; sortable;
-  interactive Leaflet/OpenStreetMap map centered on the selected university with listing price pins.
-- **Accommodation Details** (`/property/:id`) — gallery, host info, amenities, reviews, embedded map,
-  and a KSh pricing breakdown (with automatic 10% student discount).
-- **Booking Confirmation** (`/booking/:id`, protected route) — student info form, M-Pesa or card
-  payment tabs, validation with toast notifications, KSh order summary.
-- **Host Dashboard** (`/host`, role-protected — hosts only) — view listings, submit a new property.
-- **Role-based access** — `AuthContext` stores a `role` of `student` or `host`. `ProtectedRoute`
-  redirects unauthenticated users to `/login` and blocks non-host accounts from `/host`, each with
-  an explanatory toast.
+### Backend
 
-## Data
+Open another terminal:
 
-- `src/data/universities.js` — 10 major Kenyan universities with coordinates (UoN, KU, JKUAT,
-  Strathmore, USIU-Africa, Multimedia, TU-K, Moi, Egerton, Maseno).
-- `src/data/listings.js` — mock accommodation listings clustered near those universities, priced in KSh.
+cd backend
 
-## Notes for the team
+Create the virtual environment:
 
-- Auth is a lightweight `localStorage`-backed mock (no real backend) — swap `AuthContext.jsx` for
-  real API calls when the backend is ready.
-- The map uses free OpenStreetMap tiles via `react-leaflet` (no API key required).
-- Currency formatting is centralized as `KSh` throughout — search for `KSh` if you need to change it.
-- Tailwind tokens (brand teal `#0f766e`, Manrope font) live in `tailwind.config.js` to match Figma.
+python3 -m venv .venv
+
+Activate it:
+
+source .venv/bin/activate
+
+Install dependencies:
+
+pip install -r requirements.txt
+
+Start Flask:
+
+python run.py
+
+The backend normally runs on:
+
+http://localhost:5000
+
+## Project Structure
+
+qrib/
+├── backend/
+│   ├── app/
+│   │   ├── models/
+│   │   └── routes/
+│   ├── migrations/
+│   ├── requirements.txt
+│   └── run.py
+│
+├── src/
+│   ├── components/
+│   ├── context/
+│   ├── data/
+│   └── pages/
+│
+├── public/
+├── package.json
+└── README.md
+
+## Challenges and Known Issues
+
+During development, challenges included:
+
+- Connecting React to the Flask API
+- Managing authentication state
+- Protecting routes based on user roles
+- Handling asynchronous API requests
+- Managing loading and error states
+- Normalizing API responses
+- Creating responsive layouts
+- Integrating map functionality
+- Working with external API data
+
+Known limitations:
+
+- The backend currently uses a local development IP address.
+- Some property images use external image URLs.
+- The Flask backend must be running for live accommodation data.
+
+## Build Verification
+
+The production React build was successfully tested using:
+
+npm run build
+
+## Author
+
+Moringa School Software Engineering — Project 1

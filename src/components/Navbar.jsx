@@ -1,69 +1,270 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const dashboardPath =
+    user?.role === "host"
+      ? "/host/dashboard"
+      : "/student/dashboard";
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    navigate("/login", { replace: true });
+  };
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
   return (
-    <header className="w-full border-b border-line bg-white sticky top-0 z-40">
-      <div className="max-w-[1440px] mx-auto h-20 px-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-[10px] bg-brand flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M3 10.5 12 3l9 7.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" strokeLinecap="round" strokeLinejoin="round" />
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+      <nav className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6 lg:px-20">
+
+        {/* LOGO */}
+
+        <Link
+          to={user ? dashboardPath : "/"}
+          onClick={closeMenu}
+          className="flex items-center gap-3"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/20">
+            <svg
+              width="21"
+              height="21"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+            >
+              <path
+                d="M3 10.5 12 3l9 7.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              <path
+                d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
-          <span className="font-extrabold text-lg text-ink">Qrib</span>
+
+          <span className="text-2xl font-extrabold tracking-tight text-brand">
+            Qrib
+          </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted">
-          <Link to="/search" className="hover:text-brand transition">Explore</Link>
-          <a href="#how-it-works" className="hover:text-brand transition">How it works</a>
-          <Link
-            to={user?.role === "host" ? "/host" : "/host-info"}
-            className="hover:text-brand transition"
-          >
-            List a property
-          </Link>
-          <Link to="/help" className="hover:text-brand transition">Help</Link>
-        </nav>
+        {/* DESKTOP */}
 
-        <div className="flex items-center gap-4">
+        <div className="hidden items-center gap-7 md:flex">
+
           {user ? (
             <>
-              <span className="hidden sm:inline text-sm font-semibold text-ink">
-                Hi, {user.name.split(" ")[0]}
-                <span className="ml-1 text-[10px] uppercase tracking-wide bg-brand/10 text-brand px-2 py-0.5 rounded-full align-middle">
-                  {user.role}
-                </span>
-              </span>
-              <button
-                onClick={() => {
-                  logout();
-                  navigate("/");
-                }}
-                className="text-sm font-semibold text-muted hover:text-ink transition"
+              <Link
+                to={dashboardPath}
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
               >
-                Sign out
-              </button>
+                Dashboard
+              </Link>
+
+              <Link
+                to="/search"
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+              >
+                Find accommodation
+              </Link>
+
+              {user.role === "student" && (
+                <>
+                  <Link
+                    to="/search"
+                    className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                  >
+                    Saved homes
+                  </Link>
+
+                  <Link
+                    to="/help"
+                    className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                  >
+                    Help
+                  </Link>
+                </>
+              )}
+
+              {user.role === "host" && (
+                <Link
+                  to="/add-property"
+                  className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                >
+                  Add property
+                </Link>
+              )}
+
+              <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
+
+                <Link
+                  to={dashboardPath}
+                  className="text-sm font-bold text-slate-800"
+                >
+                  Hi, {user.name?.split(" ")[0] || "User"}
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-sm font-bold text-red-600 transition hover:text-red-700"
+                >
+                  Log out
+                </button>
+
+              </div>
             </>
           ) : (
             <>
-              <Link to="/login" className="text-sm font-semibold text-ink hover:text-brand transition">
-                Sign In
-              </Link>
               <Link
-                to="/login?mode=signup"
-                className="bg-brand hover:bg-brand-dark transition text-white text-sm font-bold px-5 py-2.5 rounded-lg"
+                to="/search"
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
               >
-                Get Started
+                Find accommodation
+              </Link>
+
+              <Link
+                to="/help"
+                className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+              >
+                Help
+              </Link>
+
+              <Link
+                to="/login"
+                className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
+              >
+                Log in
               </Link>
             </>
           )}
+
         </div>
-      </div>
+
+        {/* MOBILE BUTTON */}
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen((current) => !current)}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-800 transition hover:bg-slate-50 md:hidden"
+          aria-label="Toggle navigation"
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? (
+            <span className="text-2xl leading-none">×</span>
+          ) : (
+            <span className="text-2xl leading-none">☰</span>
+          )}
+        </button>
+      </nav>
+
+      {/* MOBILE MENU */}
+
+      {menuOpen && (
+        <div className="border-t border-slate-200 bg-white shadow-xl md:hidden">
+          <div className="flex flex-col gap-4 px-6 py-6">
+
+            {user ? (
+              <>
+                <Link
+                  to={dashboardPath}
+                  onClick={closeMenu}
+                  className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800"
+                >
+                  Dashboard
+                </Link>
+
+                <Link
+                  to="/search"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Find accommodation
+                </Link>
+
+                {user.role === "host" && (
+                  <Link
+                    to="/add-property"
+                    onClick={closeMenu}
+                    className="text-sm font-semibold text-slate-800"
+                  >
+                    Add property
+                  </Link>
+                )}
+
+                <Link
+                  to="/help"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Help
+                </Link>
+
+                <div className="border-t border-slate-100 pt-4">
+
+                  <p className="text-sm font-bold text-slate-900">
+                    {user.name}
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-500">
+                    {user.email}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-4 text-sm font-bold text-red-600"
+                  >
+                    Log out
+                  </button>
+
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/search"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Find accommodation
+                </Link>
+
+                <Link
+                  to="/help"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Help
+                </Link>
+
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="rounded-xl bg-brand px-5 py-3 text-center text-sm font-bold text-white"
+                >
+                  Log in
+                </Link>
+              </>
+            )}
+
+          </div>
+        </div>
+      )}
     </header>
   );
 }
