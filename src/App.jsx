@@ -12,6 +12,8 @@ import HostInfo from "./pages/HostInfo";
 import HostDashboard from "./pages/HostDashboard";
 import AddProperty from "./pages/AddProperty";
 import StudentDashboard from "./pages/StudentDashboard";
+import StudentProfile from "./pages/StudentProfile";
+import SavedHomes from "./pages/SavedHomes";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function RoleHomeRedirect() {
@@ -113,6 +115,24 @@ function App() {
               element={
                 <ProtectedRoute role="student">
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/student/profile"
+              element={
+                <ProtectedRoute role="student">
+                  <StudentProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/student/saved"
+              element={
+                <ProtectedRoute role="student">
+                  <SavedHomes />
                 </ProtectedRoute>
               }
             />
