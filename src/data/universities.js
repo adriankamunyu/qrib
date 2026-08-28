@@ -1,3 +1,4 @@
+// Kenyan universities & institutions used to anchor listings/search/map
 export const universities = [
   { id: "uon", name: "University of Nairobi", city: "Nairobi", lat: -1.2795, lng: 36.8172 },
   { id: "ku", name: "Kenyatta University", city: "Nairobi", lat: -1.1817, lng: 36.9346 },
