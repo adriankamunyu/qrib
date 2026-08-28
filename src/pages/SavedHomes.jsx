@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 
-const API_URL = "http://172.29.254.86:5000/api";
+const API_URL = import.meta.env.VITE_API_URL;
 const SAVED_LISTINGS_KEY = "qrib_saved_listings";
 const TOKEN_KEY = "qrib_access_token";
 
