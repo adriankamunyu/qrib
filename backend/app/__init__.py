@@ -47,15 +47,17 @@ def create_app():
     # CORS
     # ============================================================
 
+    allowed_origins = [
+        "http://172.29.254.86:5173",
+        "http://localhost:5173",
+        os.getenv("FRONTEND_URL", "https://qrib-mu.vercel.app"),
+    ]
+
     CORS(
         app,
         resources={
             r"/api/*": {
-                "origins": [
-                    "http://172.29.254.86:5173",
-                    "http://localhost:5173",
-                    "https://qrib-mu.vercel.app",
-                ]
+                "origins": allowed_origins
             }
         },
         methods=[
