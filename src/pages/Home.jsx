@@ -225,17 +225,17 @@ export default function Home() {
 
           {[
             {
-              icon: "🛡️",
+              icon: <ShieldIcon />,
               title: "Trusted accommodation",
               desc: "Find student-friendly homes listed on Qrib.",
             },
             {
-              icon: "🔒",
+              icon: <LockIcon />,
               title: "Simple booking",
               desc: "Manage your accommodation search in one place.",
             },
             {
-              icon: "🎓",
+              icon: <GradCapIcon />,
               title: "Built for students",
               desc: "Search by university, area, budget and property type.",
             },
@@ -244,7 +244,7 @@ export default function Home() {
               key={item.title}
               className="flex items-center gap-4 rounded-2xl p-4"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-50 text-2xl">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                 {item.icon}
               </div>
 
@@ -531,6 +531,32 @@ function SearchIcon() {
         d="m20 20-4-4"
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function GradCapIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+      <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
     </svg>
   );
 }
