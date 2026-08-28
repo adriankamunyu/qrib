@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://172.29.254.86:5000/api";
+const API_URL = import.meta.env.VITE_API_URL;
 const TOKEN_KEY = "qrib_access_token";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
