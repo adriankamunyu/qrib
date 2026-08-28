@@ -1,28 +1,60 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
-import { useEffect, useRef } from "react";
+import { useAuth } from "../context/useAuth";
 
-// Wrap a page to require login, and optionally a specific role (e.g. "host").
 export default function ProtectedRoute({ children, role }) {
   const { user, ready } = useAuth();
-  const { showToast } = useToast();
   const location = useLocation();
-  const warned = useRef(false);
 
-  useEffect(() => {
-    if (!ready) return;
-    if (!user && !warned.current) {
-      warned.current = true;
-      showToast("Please sign in to continue.", "error");
-    } else if (user && role && user.role !== role && !warned.current) {
-      warned.current = true;
-      showToast("This page is only available to host accounts.", "error");
+  // Wait until authentication has been restored.
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin" />
+
+          <p className="text-sm font-semibold text-slate-500">
+            Loading Qrib...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated.
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: location.pathname,
+        }}
+      />
+    );
+  }
+
+  // Authenticated but wrong role.
+  if (role && user.role !== role) {
+    if (user.role === "student") {
+      return (
+        <Navigate
+          to="/student/dashboard"
+          replace
+        />
+      );
     }
-  }, [ready, user]);
 
-  if (!ready) return null;
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
-  if (role && user.role !== role) return <Navigate to="/" replace />;
+    if (user.role === "host") {
+      return (
+        <Navigate
+          to="/host/dashboard"
+          replace
+        />
+      );
+    }
+
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 }
