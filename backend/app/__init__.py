@@ -54,6 +54,7 @@ def create_app():
                 "origins": [
                     "http://172.29.254.86:5173",
                     "http://localhost:5173",
+                    "https://qrib-mu.vercel.app",
                 ]
             }
         },
