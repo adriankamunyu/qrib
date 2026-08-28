@@ -205,7 +205,6 @@ def update_property(property_id):
         "furnished",
         "image",
         "distance_km",
-        "rating",
     ]
 
     for field in allowed_fields:
