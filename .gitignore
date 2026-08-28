@@ -29,3 +29,5 @@ backend/.env
 backend/**/*.pyc
 
 .env
+.vercel
+.env*
