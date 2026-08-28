@@ -1,6 +1,7 @@
 from datetime import date
 
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.extensions import db
 from app.models import Booking, Property, User
@@ -19,6 +20,7 @@ bookings_bp = Blueprint(
 # ============================================================
 
 @bookings_bp.post("")
+@jwt_required()
 def create_booking():
     data = request.get_json()
 
@@ -100,12 +102,31 @@ def create_booking():
 # ============================================================
 
 @bookings_bp.get("")
+@jwt_required()
 def get_bookings():
-    bookings = (
-        Booking.query
-        .order_by(Booking.id.desc())
-        .all()
-    )
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if user.role == "student":
+        bookings = (
+            Booking.query
+            .filter_by(student_id=user_id)
+            .order_by(Booking.id.desc())
+            .all()
+        )
+    elif user.role == "host":
+        bookings = (
+            Booking.query
+            .join(Property)
+            .filter(Property.host_id == user_id)
+            .order_by(Booking.id.desc())
+            .all()
+        )
+    else:
+        bookings = []
 
     return jsonify([
         booking_to_dict(booking)
@@ -141,6 +162,7 @@ def get_booking(booking_id):
 # ============================================================
 
 @bookings_bp.patch("/<int:booking_id>")
+@jwt_required()
 def update_booking(booking_id):
     booking = db.session.get(
         Booking,
