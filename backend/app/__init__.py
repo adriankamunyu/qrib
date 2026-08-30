@@ -8,6 +8,37 @@ from flask_jwt_extended import JWTManager
 
 from .extensions import db, migrate
 from .models import User, Property, University, Booking, Payment
+
+UNIVERSITY_SEED = [
+    {"id": 1, "name": "University of Nairobi", "city": "Nairobi"},
+    {"id": 2, "name": "Kenyatta University", "city": "Nairobi"},
+    {"id": 3, "name": "Jomo Kenyatta University of Agriculture and Technology", "city": "Kiambu"},
+    {"id": 4, "name": "Strathmore University", "city": "Nairobi"},
+    {"id": 5, "name": "United States International University - Africa", "city": "Nairobi"},
+    {"id": 6, "name": "Moi University", "city": "Eldoret"},
+    {"id": 7, "name": "Egerton University", "city": "Njoro"},
+    {"id": 8, "name": "Maseno University", "city": "Kisumu"},
+    {"id": 9, "name": "Kisii University", "city": "Kisii"},
+    {"id": 10, "name": "Maasai Mara University", "city": "Narok"},
+    {"id": 11, "name": "Mount Kenya University", "city": "Thika"},
+    {"id": 12, "name": "Daystar University", "city": "Nairobi"},
+    {"id": 13, "name": "Catholic University of Eastern Africa", "city": "Nairobi"},
+    {"id": 14, "name": "Africa Nazarene University", "city": "Nairobi"},
+    {"id": 15, "name": "University of Embu", "city": "Embu"},
+    {"id": 16, "name": "Dedan Kimathi University of Technology", "city": "Nyeri"},
+    {"id": 17, "name": "Technical University of Kenya", "city": "Nairobi"},
+    {"id": 18, "name": "Multimedia University of Kenya", "city": "Nairobi"},
+    {"id": 19, "name": "KCA University", "city": "Nairobi"},
+    {"id": 20, "name": "Riara University", "city": "Nairobi"},
+    {"id": 21, "name": "St. Paul’s University", "city": "Limuru"},
+    {"id": 22, "name": "University of Eldoret", "city": "Eldoret"},
+    {"id": 23, "name": "Machakos University", "city": "Machakos"},
+    {"id": 24, "name": "Nakuru University", "city": "Nakuru"},
+    {"id": 25, "name": "Meru University of Science and Technology", "city": "Meru"},
+    {"id": 26, "name": "Murang’a University of Technology", "city": "Murang’a"},
+    {"id": 27, "name": "Co-operative University of Kenya", "city": "Nairobi"},
+    {"id": 28, "name": "Karatina University", "city": "Karatina"},
+]
 from .routes.properties import properties_bp
 from .routes.universities import universities_bp
 from .routes.bookings import bookings_bp
@@ -50,6 +81,22 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+
+        for university in UNIVERSITY_SEED:
+            entry = db.session.get(University, university["id"])
+            if entry is None:
+                db.session.add(
+                    University(
+                        id=university["id"],
+                        name=university["name"],
+                        city=university["city"],
+                    )
+                )
+            else:
+                entry.name = university["name"]
+                entry.city = university["city"]
+
+        db.session.commit()
 
     # ============================================================
     # CORS
