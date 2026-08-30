@@ -120,6 +120,11 @@ export default function AddProperty() {
       return;
     }
 
+    if (form.image && !/^https?:\/\/.+/.test(form.image.trim())) {
+      showToast("Please enter a valid image URL or leave the image field empty.", "error");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -424,7 +429,7 @@ export default function AddProperty() {
                   />
 
                   <input
-                    type="url"
+                    type="text"
                     value={form.image.startsWith("data:image") ? "" : form.image}
                     onChange={update("image")}
                     placeholder="Or paste an image URL"

@@ -1,6 +1,7 @@
 import os
+import re
 
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
@@ -60,10 +61,8 @@ def create_app():
         "http://127.0.0.1:4173",
         "http://0.0.0.0:5173",
         "https://qrib-mu.vercel.app",
-        "https://*.vercel.app",
         "https://qrib-f4sk.onrender.com",
         os.getenv("FRONTEND_URL", "https://qrib-mu.vercel.app"),
-        os.getenv("VERCEL_URL", ""),
     ]
 
     if configured_origins:
@@ -79,6 +78,34 @@ def create_app():
         if origin and origin.strip()
     ]
     allowed_origins = list(dict.fromkeys(allowed_origins))
+
+    def is_allowed_origin(origin):
+        if not origin:
+            return False
+
+        if origin in allowed_origins:
+            return True
+
+        return bool(
+            re.match(r"^https://[a-z0-9-]+\.vercel\.app$", origin)
+            or re.match(r"^https://[a-z0-9-]+\.onrender\.com$", origin)
+        )
+
+    @app.after_request
+    def apply_cors_headers(response):
+        origin = request.headers.get("Origin")
+
+        if origin and is_allowed_origin(origin):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Vary"] = "Origin"
+
+            if request.method == "OPTIONS":
+                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+                response.headers["Access-Control-Max-Age"] = "600"
+
+        return response
 
     CORS(
         app,
