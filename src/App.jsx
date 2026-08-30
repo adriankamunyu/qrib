@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import SearchResults from "./pages/SearchResults";
 import AccommodationDetails from "./pages/AccommodationDetails";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import PaymentPage from "./pages/PaymentPage";
 import Help from "./pages/Help";
 import HostInfo from "./pages/HostInfo";
 import HostDashboard from "./pages/HostDashboard";
@@ -88,6 +89,11 @@ function App() {
             <Route
               path="/booking/:id"
               element={<BookingConfirmation />}
+            />
+
+            <Route
+              path="/payment/:bookingId"
+              element={<PaymentPage />}
             />
 
             <Route
