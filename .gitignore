@@ -33,3 +33,5 @@ backend/instance/
 .env
 .env.local
 
+.vercel/
+.env.vercel.production
