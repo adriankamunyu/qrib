@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 
 from app.extensions import db
 from app.models import University
@@ -26,6 +27,7 @@ def get_universities():
 
 
 @universities_bp.post("")
+@jwt_required()
 def create_university():
     data = request.get_json()
 
