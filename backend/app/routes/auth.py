@@ -1,3 +1,5 @@
+import os
+
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import (
@@ -5,6 +7,8 @@ from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
 )
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from app.extensions import db
 from app.models import User
@@ -17,6 +21,35 @@ auth_bp = Blueprint(
 )
 
 
+def verify_google_credential(credential):
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+
+    if not client_id:
+        raise ValueError("Google client ID is not configured on the backend.")
+
+    try:
+        payload = id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            client_id,
+        )
+    except Exception as exc:
+        raise ValueError(f"Invalid Google credential: {exc}") from exc
+
+    email = (payload.get("email") or "").strip().lower()
+    name = (payload.get("name") or "").strip()
+    google_id = str(payload.get("sub") or "").strip()
+
+    if not email or not name or not google_id:
+        raise ValueError("Google account is missing required user details.")
+
+    return {
+        "email": email,
+        "name": name,
+        "google_id": google_id,
+    }
+
+
 def user_to_dict(user):
     return {
         "id": user.id,
@@ -24,6 +57,7 @@ def user_to_dict(user):
         "name": user.name,
         "email": user.email,
         "role": user.role,
+        "auth_provider": user.auth_provider,
         "created_at": user.created_at.isoformat(),
     }
 
@@ -79,9 +113,9 @@ def register():
             "error": "Password must be at least 6 characters"
         }), 400
 
-    if role not in ("student", "host"):
+    if role not in ("student", "host", "admin"):
         return jsonify({
-            "error": "Role must be student or host"
+            "error": "Role must be student, host, or admin"
         }), 400
 
     # Check email
@@ -182,6 +216,71 @@ def login():
 # =========================
 # CURRENT USER
 # =========================
+@auth_bp.post("/google")
+def google_login():
+    data = request.get_json(silent=True) or {}
+
+    credential = data.get("credential") or data.get("idToken") or data.get("token")
+    email = (data.get("email") or "").strip().lower()
+    name = (data.get("name") or "").strip()
+    google_id = (data.get("googleId") or data.get("google_id") or "").strip()
+    role = (data.get("role") or "student").strip().lower()
+
+    if credential:
+        try:
+            verified = verify_google_credential(credential)
+            email = verified["email"]
+            name = verified["name"]
+            google_id = verified["google_id"]
+        except ValueError as exc:
+            return jsonify({
+                "error": str(exc)
+            }), 401
+
+    if not email or not name:
+        return jsonify({
+            "error": "Google name and email are required"
+        }), 400
+
+    if role not in ("student", "host", "admin"):
+        role = "student"
+
+    user = User.query.filter_by(email=email).first()
+
+    if user is None:
+        username = email.split("@")[0]
+        if User.query.filter_by(username=username).first():
+            username = f"{username}_{User.query.count() + 1}"
+
+        user = User(
+            username=username,
+            name=name,
+            email=email,
+            role=role,
+            google_id=google_id or None,
+            auth_provider="google",
+            hashed_password=None,
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        if google_id:
+            user.google_id = google_id
+        user.name = name or user.name
+        user.auth_provider = "google"
+        if user.role != "admin" and role == "admin":
+            user.role = "admin"
+        db.session.commit()
+
+    access_token = create_access_token(identity=str(user.id))
+
+    return jsonify({
+        "message": "Google login successful",
+        "access_token": access_token,
+        "user": user_to_dict(user),
+    }), 200
+
+
 @auth_bp.get("/me")
 @jwt_required()
 def get_current_user():

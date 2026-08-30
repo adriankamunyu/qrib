@@ -43,3 +43,16 @@ class Booking(db.Model):
         "User",
         back_populates="bookings",
     )
+
+    payments = db.relationship(
+        "Payment",
+        back_populates="booking",
+        uselist=False,
+        lazy=True,
+    )
+
+    messages = db.relationship(
+        "Message",
+        back_populates="booking",
+        lazy=True,
+    )

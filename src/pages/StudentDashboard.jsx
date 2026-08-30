@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import { useAuth } from "../context/useAuth";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 
 const SAVED_LISTINGS_KEY = "qrib_saved_listings";
 const TOKEN_KEY = "qrib_access_token";
