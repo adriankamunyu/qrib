@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
 
 from .extensions import db, migrate
-from .models import User, Property, University, Booking
+from .models import User, Property, University, Booking, Payment
 from .routes.properties import properties_bp
 from .routes.universities import universities_bp
 from .routes.bookings import bookings_bp
@@ -24,17 +24,20 @@ def create_app():
     # DATABASE
     # ============================================================
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///qrib.db",
+    )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # ============================================================
     # JWT
     # ============================================================
 
-    app.config["JWT_SECRET_KEY"] = os.getenv(
-        "JWT_SECRET_KEY",
-        "qrib-development-secret-change-this"
-    )
+    jwt_secret = os.getenv("JWT_SECRET_KEY")
+    if not jwt_secret:
+        raise RuntimeError("JWT_SECRET_KEY environment variable is not set")
+    app.config["JWT_SECRET_KEY"] = jwt_secret
 
     # ============================================================
     # INITIALIZE EXTENSIONS
@@ -55,6 +58,7 @@ def create_app():
         "http://localhost:4173",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:4173",
+        "http://0.0.0.0:5173",
         "https://qrib-mu.vercel.app",
         "https://*.vercel.app",
         "https://qrib-f4sk.onrender.com",
@@ -78,23 +82,9 @@ def create_app():
 
     CORS(
         app,
-        resources={
-            r"/api/*": {
-                "origins": allowed_origins,
-            }
-        },
-        methods=[
-            "GET",
-            "POST",
-            "PUT",
-            "PATCH",
-            "DELETE",
-            "OPTIONS",
-        ],
-        allow_headers=[
-            "Content-Type",
-            "Authorization",
-        ],
+        resources={r"/api/*": {"origins": allowed_origins}},
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
         supports_credentials=True,
     )
 

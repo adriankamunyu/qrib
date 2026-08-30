@@ -1,18 +1,15 @@
 import os
 import uuid
+from datetime import datetime, timezone
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import db
 from app.models import Booking, Payment, Property, User
 
 
-payments_bp = Blueprint(
-    "payments",
-    __name__,
-    url_prefix="/api/payments"
-)
+payments_bp = Blueprint("payments", __name__, url_prefix="/api/payments")
 
 
 def payment_to_dict(payment):
@@ -26,36 +23,29 @@ def payment_to_dict(payment):
         "provider": payment.provider,
         "status": payment.status,
         "reference": payment.reference,
-        "created_at": payment.created_at.isoformat(),
-        "updated_at": payment.updated_at.isoformat(),
+        "transaction_id": payment.transaction_id,
+        "gateway_response": payment.gateway_response,
+        "created_at": payment.created_at.isoformat() if payment.created_at else None,
+        "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
     }
 
 
 @payments_bp.post("/initiate")
 @jwt_required()
 def initiate_payment():
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+
+    if not user or user.role != "student":
+        return jsonify({"error": "Only students can initiate payments"}), 403
+
     data = request.get_json(silent=True) or {}
-
-    auth_user_id = int(get_jwt_identity())
-    auth_user = db.session.get(User, auth_user_id)
-
-    if not auth_user:
-        return jsonify({"error": "Authenticated user not found"}), 404
-
-    if auth_user.role not in {"student", "admin"}:
-        return jsonify({
-            "error": "Only students can initiate payments"
-        }), 403
-
     booking_id = data.get("booking_id")
-    property_id = data.get("property_id")
     amount = data.get("amount")
     currency = (data.get("currency") or "KES").upper()
 
     if booking_id in (None, ""):
-        return jsonify({
-            "error": "booking_id is required"
-        }), 400
+        return jsonify({"error": "booking_id is required"}), 400
 
     try:
         booking_id = int(booking_id)
@@ -66,21 +56,10 @@ def initiate_payment():
     if not booking:
         return jsonify({"error": "Booking not found"}), 404
 
-    if booking.student_id != auth_user_id and auth_user.role != "admin":
-        return jsonify({
-            "error": "You can only pay for your own booking"
-        }), 403
+    if booking.student_id != user_id:
+        return jsonify({"error": "You can only pay for your own booking"}), 403
 
     property_id = booking.property_id
-
-    if property_id in (None, ""):
-        return jsonify({"error": "Property not found for booking"}), 404
-
-    try:
-        property_id = int(property_id)
-    except (TypeError, ValueError):
-        return jsonify({"error": "property_id must be an integer"}), 400
-
     property = db.session.get(Property, property_id)
     if not property:
         return jsonify({"error": "Property not found"}), 404
@@ -89,12 +68,7 @@ def initiate_payment():
     if parsed_amount <= 0:
         return jsonify({"error": "Payment amount must be greater than zero"}), 400
 
-    reference = f"QRIB-{uuid.uuid4().hex[:12].upper()}"
-
-    existing_payment = None
-    if booking:
-        existing_payment = Payment.query.filter_by(booking_id=booking.id).first()
-
+    existing_payment = Payment.query.filter_by(booking_id=booking.id).first()
     if existing_payment:
         return jsonify({
             "message": "A payment already exists for this booking",
@@ -114,15 +88,20 @@ def initiate_payment():
             },
         }), 200
 
+    reference = f"QRIB-{uuid.uuid4().hex[:12].upper()}"
+    now = datetime.now(timezone.utc)
+
     payment = Payment(
         booking_id=booking.id,
-        student_id=auth_user_id,
+        student_id=user_id,
         property_id=property_id,
         amount=parsed_amount,
         currency=currency,
         provider="flutterwave",
         status="pending",
         reference=reference,
+        created_at=now,
+        updated_at=now,
     )
 
     db.session.add(payment)
@@ -145,8 +124,8 @@ def initiate_payment():
             "currency": payment.currency,
             "reference": payment.reference,
             "customer": {
-                "email": auth_user.email,
-                "name": auth_user.name,
+                "email": user.email,
+                "name": user.name,
             },
             "customizations": {
                 "title": "Qrib Accommodation",
@@ -163,32 +142,47 @@ def initiate_payment():
     }), 201
 
 
-@payments_bp.patch("/<int:payment_id>/status")
+@payments_bp.get("/<int:payment_id>")
 @jwt_required()
-def update_payment_status(payment_id):
+def get_payment(payment_id):
+    user_id = int(get_jwt_identity())
     payment = db.session.get(Payment, payment_id)
 
     if not payment:
         return jsonify({"error": "Payment not found"}), 404
 
-    user_id = int(get_jwt_identity())
     if payment.student_id != user_id:
-        return jsonify({"error": "You can only update your own payment"}), 403
+        return jsonify({"error": "Access denied"}), 403
+
+    return jsonify({"payment": payment_to_dict(payment)}), 200
+
+
+@payments_bp.patch("/<int:payment_id>/status")
+@jwt_required()
+def update_payment_status(payment_id):
+    user_id = int(get_jwt_identity())
+    payment = db.session.get(Payment, payment_id)
+
+    if not payment:
+        return jsonify({"error": "Payment not found"}), 404
+
+    if payment.student_id != user_id:
+        return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json(silent=True) or {}
-    status = (data.get("status") or "").strip().lower()
+    status = data.get("status")
 
     if not status:
-        return jsonify({"error": "Payment status is required"}), 400
+        return jsonify({"error": "status is required"}), 400
 
-    allowed_statuses = {"pending", "paid", "failed", "cancelled"}
+    allowed_statuses = ["pending", "successful", "failed", "cancelled"]
     if status not in allowed_statuses:
-        return jsonify({
-            "error": "Invalid status",
-            "allowed_statuses": sorted(allowed_statuses),
-        }), 400
+        return jsonify({"error": "Invalid status", "allowed_statuses": allowed_statuses}), 400
 
     payment.status = status
+    payment.gateway_response = data.get("gateway_response") or payment.gateway_response
+    payment.transaction_id = data.get("transaction_id") or payment.transaction_id
+    payment.updated_at = datetime.now(timezone.utc)
     db.session.commit()
 
     return jsonify({

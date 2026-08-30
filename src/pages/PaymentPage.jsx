@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import Navbar from "../components/Navbar";
+
 import Footer from "../components/Footer";
+import Navbar from "../components/Navbar";
 import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 const TOKEN_KEY = "qrib_access_token";
@@ -11,6 +13,7 @@ export default function PaymentPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [booking, setBooking] = useState(null);
   const [property, setProperty] = useState(null);
@@ -31,6 +34,7 @@ export default function PaymentPage() {
       try {
         const token = localStorage.getItem(TOKEN_KEY);
         if (!token) {
+          showToast("Please log in to continue with payment.", "error");
           navigate("/login", { replace: true });
           return;
         }
@@ -40,13 +44,11 @@ export default function PaymentPage() {
         });
 
         const bookingData = await bookingResponse.json();
-
         if (!bookingResponse.ok) {
           throw new Error(bookingData.error || "Booking not found.");
         }
 
         const nextBooking = bookingData.booking || bookingData;
-
         if (!cancelled) {
           setBooking(nextBooking);
         }
@@ -61,12 +63,11 @@ export default function PaymentPage() {
         }
 
         const nextProperty = propertyData.property || propertyData;
-
         if (!cancelled) {
           setProperty(nextProperty);
         }
 
-        const response = await fetch(`${API_URL}/payments/initiate`, {
+        const paymentResponse = await fetch(`${API_URL}/payments/initiate`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -74,15 +75,13 @@ export default function PaymentPage() {
           },
           body: JSON.stringify({
             booking_id: Number(bookingId),
-            property_id: Number(nextBooking.property_id),
             amount: Number(nextProperty.price_per_month || nextProperty.pricePerMonth || 0),
             currency: "KES",
           }),
         });
 
-        const paymentData = await response.json();
-
-        if (!response.ok) {
+        const paymentData = await paymentResponse.json();
+        if (!paymentResponse.ok) {
           throw new Error(paymentData.error || "Unable to create payment request.");
         }
 
@@ -105,13 +104,24 @@ export default function PaymentPage() {
     return () => {
       cancelled = true;
     };
-  }, [bookingId, navigate]);
+  }, [bookingId, navigate, showToast]);
 
   const amount = useMemo(() => {
     if (!property) return 0;
     const propertyAmount = Number(property.price_per_month || property.pricePerMonth || 0);
     return Number.isFinite(propertyAmount) && propertyAmount > 0 ? propertyAmount : 0;
   }, [property]);
+
+  const handlePay = () => {
+    if (!payment) {
+      return;
+    }
+
+    showToast(
+      "Sandbox payment is ready. Connect your Flutterwave keys in production to complete live checkout.",
+      "success"
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-slate-900">
@@ -179,13 +189,7 @@ export default function PaymentPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={() => {
-                  if (payment?.reference) {
-                    alert(`Sandbox payment initialized. Reference: ${payment.reference}\nSet FLUTTERWAVE keys to enable live checkout.`);
-                    return;
-                  }
-                  alert("Sandbox checkout is ready. Add your Flutterwave keys to complete a real payment flow.");
-                }}
+                onClick={handlePay}
                 className="flex-1 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700"
               >
                 Continue to payment

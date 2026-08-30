@@ -9,7 +9,7 @@ export default function Login() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const { login, signup, googleLogin } = useAuth();
+  const { login, signup, googleLogin, resetPassword } = useAuth();
   const { showToast } = useToast();
 
   const [mode, setMode] = useState(
@@ -191,6 +191,35 @@ export default function Login() {
     } catch (error) {
       console.error("Google login error:", error);
       showToast("Google sign-in is unavailable right now.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const email = window.prompt("Enter the email address for your account:");
+    if (!email) return;
+
+    const newPassword = window.prompt("Enter a new password (at least 6 characters):");
+    if (!newPassword) return;
+
+    setLoading(true);
+
+    try {
+      const result = await resetPassword({
+        email: email.trim(),
+        newPassword: newPassword.trim(),
+      });
+
+      if (!result || !result.ok) {
+        showToast(result?.message || "Password reset failed.", "error");
+        return;
+      }
+
+      showToast(result.message || "Password reset successful.", "success");
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      showToast("Password reset is unavailable right now.", "error");
     } finally {
       setLoading(false);
     }
@@ -744,12 +773,7 @@ export default function Login() {
                   <button
                     type="button"
                     disabled={loading}
-                    onClick={() =>
-                      showToast(
-                        "Password reset is not connected yet.",
-                        "info"
-                      )
-                    }
+                    onClick={handleForgotPassword}
                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition disabled:opacity-50"
                   >
                     Forgot password?

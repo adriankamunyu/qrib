@@ -27,11 +27,13 @@ class Payment(db.Model):
         nullable=False,
     )
 
-    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False, default=0)
     currency = db.Column(db.String(10), nullable=False, default="KES")
     provider = db.Column(db.String(50), nullable=False, default="flutterwave")
     status = db.Column(db.String(30), nullable=False, default="pending")
     reference = db.Column(db.String(255), unique=True, nullable=False)
+    transaction_id = db.Column(db.String(120), nullable=True)
+    gateway_response = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(
         db.DateTime(timezone=True),

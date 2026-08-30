@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContextValue";
 
-
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 const TOKEN_KEY = "qrib_access_token";
 
@@ -174,6 +173,49 @@ export function AuthProvider({ children }) {
   };
 
   // =========================================================
+  // RESET PASSWORD
+  // =========================================================
+  const resetPassword = async ({ email, newPassword }) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          new_password: newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          ok: false,
+          message:
+            data.error ||
+            data.message ||
+            data.msg ||
+            "Password reset failed.",
+        };
+      }
+
+      return {
+        ok: true,
+        message: data.message || "Password reset successful.",
+      };
+    } catch (error) {
+      console.error("Reset password error:", error);
+
+      return {
+        ok: false,
+        message: "Unable to connect to the password reset API.",
+      };
+    }
+  };
+
+  // =========================================================
   // SIGNUP
   // =========================================================
   const signup = async ({
@@ -261,6 +303,7 @@ export function AuthProvider({ children }) {
         login,
         signup,
         googleLogin,
+        resetPassword,
         logout,
       }}
     >

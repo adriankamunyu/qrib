@@ -1,182 +1,212 @@
-# Qrib — Student Accommodation Finder
+# Qrib
 
-## Project Description
+Qrib is a full-stack student accommodation platform built to help university students find and secure housing near their campus with less friction. The platform connects students with verified property listings, supports booking workflows, and gives hosts a way to manage their properties and availability.
 
-Qrib is a student accommodation finder built with React. The application helps university students discover accommodation, search and filter available properties, view accommodation details, and navigate through a student-focused interface.
+## Project Overview
 
-This project was developed as part of Moringa School Project 1 to demonstrate React component structure, routing, asynchronous data fetching, state management, controlled inputs, dynamic rendering, and responsive UI design.
+Qrib was designed to solve the common problem students face when moving to a new city or campus: finding trustworthy, affordable accommodation that matches their budget, preferred location, and living needs. The platform combines a modern React frontend with a Flask backend to provide a user-friendly experience for browsing listings, managing accounts, and completing bookings.
 
-## Features
+## Key Features
 
-- Student accommodation search
-- Dynamic accommodation listings
-- Search and filtering
-- Property details
-- Student dashboard
-- Host dashboard
-- User authentication
-- Protected routes
-- Responsive UI
-- Loading and error states
-- Interactive map
-- External API integration
+- Student-friendly accommodation search and discovery
+- Property detail pages with booking entry flows
+- Host property management and listing creation
+- Role-based access for students, hosts, and administrators
+- Secure authentication using JWT and Google login support
+- Booking creation and management workflows
+- Payment flow ready for Flutterwave-compatible processing
+- Responsive UI for mobile and desktop screens
+- Environment-based configuration for frontend/backend connectivity
+- CORS-safe API integration for deployment environments
 
-## Technologies Used
+## Tech Stack
 
+### Frontend
 - React
 - Vite
 - JavaScript
 - React Router
 - Tailwind CSS
-- Fetch API
-- Flask
-- SQLAlchemy
-- Leaflet
-- OpenStreetMap
-- Git and GitHub
-
-## API Integration
-
-The React application uses asynchronous JavaScript with the Fetch API.
-
-### Qrib Backend API
-
-The application communicates with the Qrib Flask backend for accommodation and authentication data.
-
-Base URL:
-
-http://172.29.254.86:5000/api
-
-Property endpoint:
-
-GET /api/properties
-
-Property details:
-
-GET /api/properties/:id
-
-Authentication endpoints:
-
-POST /api/auth/login
-POST /api/auth/register
-GET /api/auth/me
-
-### External API
-
-An external public API will be integrated into the React application to satisfy the Moringa Project 1 external API requirement. The API and endpoint will be documented here after integration.
-
-## Routing
-
-React Router is used for application navigation.
-
-Important routes include:
-
-- /
-- /login
-- /search
-- /property/:id
-- /booking/:id
-- /student/dashboard
-- /host
-- /host/dashboard
-- /host/add-property
-
-Protected routes require the appropriate authenticated user role.
-
-## Setup Instructions
-
-### Frontend
-
-Clone the repository:
-
-git clone https://github.com/adriankamunyu/qrib.git
-cd qrib
-
-Install dependencies:
-
-npm install
-
-Start the frontend:
-
-npm run dev
-
-The frontend normally runs on:
-
-http://localhost:5173
 
 ### Backend
+- Flask
+- Flask-SQLAlchemy
+- Flask-JWT-Extended
+- Flask-CORS
+- Flask-Migrate
+- PostgreSQL-ready configuration
 
-Open another terminal:
+### Additional Tools
+- Git and GitHub
+- Render for backend deployment
+- Vercel for frontend deployment
+- Google OAuth integration
+- Flutterwave-compatible payment setup
 
-cd backend
+## Application Flow
 
-Create the virtual environment:
-
-python3 -m venv .venv
-
-Activate it:
-
-source .venv/bin/activate
-
-Install dependencies:
-
-pip install -r requirements.txt
-
-Start Flask:
-
-python run.py
-
-The backend normally runs on:
-
-http://localhost:5000
+1. Students browse available properties.
+2. They filter and view details for accommodation listings.
+3. They create a booking for a selected property.
+4. They complete a secure payment flow in a sandbox-ready or production-friendly setup.
+5. Hosts can manage listings and relevant booking activity.
+6. Admins and access-controlled users can operate within their role-specific dashboards.
 
 ## Project Structure
 
+```text
 qrib/
 ├── backend/
 │   ├── app/
 │   │   ├── models/
-│   │   └── routes/
+│   │   ├── routes/
+│   │   ├── extensions.py
+│   │   └── __init__.py
 │   ├── migrations/
 │   ├── requirements.txt
 │   └── run.py
-│
 ├── src/
 │   ├── components/
 │   ├── context/
-│   ├── data/
-│   └── pages/
-│
+│   ├── pages/
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
 ├── public/
 ├── package.json
-└── README.md
+├── vite.config.js
+├── render.yaml
+├── README.md
+└── .env
+```
 
-## Challenges and Known Issues
+## API Overview
 
-During development, challenges included:
+The application uses a Flask API with REST-style endpoints for property, auth, booking, and payment actions.
 
-- Connecting React to the Flask API
-- Managing authentication state
-- Protecting routes based on user roles
-- Handling asynchronous API requests
-- Managing loading and error states
-- Normalizing API responses
-- Creating responsive layouts
-- Integrating map functionality
-- Working with external API data
+### Authentication
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/google
+- GET /api/auth/me
 
-Known limitations:
+### Properties
+- GET /api/properties
+- GET /api/properties/<id>
+- POST /api/properties
+- PATCH /api/properties/<id>
+- DELETE /api/properties/<id>
 
-- The backend currently uses a local development IP address.
-- Some property images use external image URLs.
-- The Flask backend must be running for live accommodation data.
+### Bookings
+- GET /api/bookings
+- GET /api/bookings/<id>
+- POST /api/bookings
+- PATCH /api/bookings/<id>
+
+### Payments
+- POST /api/payments/initiate
+- GET /api/payments/<id>
+- PATCH /api/payments/<id>/status
+
+### Health Check
+- GET /api/health
+
+## Local Setup
+
+### Prerequisites
+- Node.js and npm
+- Python 3.10+
+- Virtual environment support
+
+### Frontend Setup
+
+```bash
+git clone https://github.com/adriankamunyu/qrib.git
+cd qrib
+npm install
+npm run dev
+```
+
+The frontend runs locally on:
+
+```text
+http://localhost:5173
+```
+
+### Backend Setup
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python run.py
+```
+
+The backend runs locally on:
+
+```text
+http://localhost:5000
+```
+
+## Environment Variables
+
+The project expects environment variables for both frontend and backend configuration.
+
+### Frontend
+```env
+VITE_API_URL=https://your-render-backend-url/api
+VITE_GOOGLE_CLIENT_ID=your-google-client-id
+```
+
+### Backend
+```env
+DATABASE_URL=your_database_url
+JWT_SECRET_KEY=your_jwt_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+FRONTEND_URL=https://your-vercel-app-url
+CORS_ALLOWED_ORIGINS=https://your-vercel-app-url
+FLUTTERWAVE_PUBLIC_KEY=your_flutterwave_public_key
+FLUTTERWAVE_SECRET_KEY=your_flutterwave_secret_key
+FLUTTERWAVE_ENCRYPTION_KEY=your_flutterwave_encryption_key
+```
+
+## Deployment
+
+This project is structured for deployment across separate hosts:
+
+- Frontend: Vercel
+- Backend: Render
+
+The application uses environment-based configuration to keep production values separate from local development values.
+
+## Challenges and Known Considerations
+
+During development, the project required careful attention to:
+
+- frontend-backend connectivity
+- CORS configuration for production
+- environment variable handling
+- Google auth setup and verification
+- role-based API authorization
+- booking and payment workflow validation
+- clean deployment configuration
 
 ## Build Verification
 
-The production React build was successfully tested using:
+The project was verified with a production build check:
 
+```bash
 npm run build
+```
+
+This confirms the frontend compiles successfully for deployment.
+
+## Conclusion
+
+Qrib is a fully developed student accommodation solution designed for real-world use. It combines thoughtful UI design, secure backend architecture, and practical booking workflows to create a complete experience for students and hosts alike.
 
 ## Author
 
-Moringa School Software Engineering — Project 1
+Project developed for the Moringa School full-stack development track.
