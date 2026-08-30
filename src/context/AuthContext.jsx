@@ -116,6 +116,7 @@ export function AuthProvider({ children }) {
     name,
     email,
     googleId,
+    credential,
     role = "student",
   }) => {
     try {
@@ -128,6 +129,7 @@ export function AuthProvider({ children }) {
           name,
           email,
           googleId,
+          credential,
           role,
         }),
       });

@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 export default function Login() {
   const [params] = useSearchParams();
@@ -17,6 +19,93 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("student");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    const scriptId = "google-gsi-script";
+    const existingScript = document.getElementById(scriptId);
+
+    if (existingScript) {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response) => {
+            const result = await googleLogin({
+              credential: response.credential,
+              role: "student",
+            });
+
+            if (!result || !result.ok) {
+              showToast(result?.message || "Google sign-in failed.", "error");
+              return;
+            }
+
+            showToast("Google sign-in successful.", "success");
+
+            if (result.user?.role === "admin") {
+              navigate("/admin/dashboard", { replace: true });
+              return;
+            }
+
+            if (result.user?.role === "host") {
+              navigate("/host/dashboard", { replace: true });
+              return;
+            }
+
+            navigate("/student/dashboard", { replace: true });
+          },
+        });
+      }
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response) => {
+            const result = await googleLogin({
+              credential: response.credential,
+              role: "student",
+            });
+
+            if (!result || !result.ok) {
+              showToast(result?.message || "Google sign-in failed.", "error");
+              return;
+            }
+
+            showToast("Google sign-in successful.", "success");
+
+            if (result.user?.role === "admin") {
+              navigate("/admin/dashboard", { replace: true });
+              return;
+            }
+
+            if (result.user?.role === "host") {
+              navigate("/host/dashboard", { replace: true });
+              return;
+            }
+
+            navigate("/student/dashboard", { replace: true });
+          },
+        });
+      }
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, [GOOGLE_CLIENT_ID, googleLogin, navigate, showToast]);
 
   const [form, setForm] = useState({
     name: "",
@@ -64,36 +153,41 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const demoGoogleUser = {
-        name: "Google Demo User",
-        email: "demo.google@qrib.app",
-        googleId: "google-demo-user-001",
-        role: "student",
-      };
+      if (!GOOGLE_CLIENT_ID || !window.google?.accounts?.id) {
+        const demoGoogleUser = {
+          name: "Google Demo User",
+          email: "demo.google@qrib.app",
+          googleId: "google-demo-user-001",
+          role: "student",
+        };
 
-      const result = await googleLogin(demoGoogleUser);
+        const result = await googleLogin(demoGoogleUser);
 
-      if (!result || !result.ok) {
-        showToast(
-          result?.message || "Google sign-in failed.",
-          "error"
-        );
+        if (!result || !result.ok) {
+          showToast(
+            result?.message || "Google sign-in failed.",
+            "error"
+          );
+          return;
+        }
+
+        showToast("Google sign-in successful.", "success");
+
+        if (result.user?.role === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+          return;
+        }
+
+        if (result.user?.role === "host") {
+          navigate("/host/dashboard", { replace: true });
+          return;
+        }
+
+        navigate("/student/dashboard", { replace: true });
         return;
       }
 
-      showToast("Google sign-in successful.", "success");
-
-      if (result.user?.role === "admin") {
-        navigate("/admin/dashboard", { replace: true });
-        return;
-      }
-
-      if (result.user?.role === "host") {
-        navigate("/host/dashboard", { replace: true });
-        return;
-      }
-
-      navigate("/student/dashboard", { replace: true });
+      window.google.accounts.id.prompt();
     } catch (error) {
       console.error("Google login error:", error);
       showToast("Google sign-in is unavailable right now.", "error");

@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const TOKEN_KEY = "qrib_access_token";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { universities } from "../data/universities";
+import { universities, resolveUniversityId } from "../data/universities";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 
@@ -103,7 +103,9 @@ export default function AddProperty() {
       return;
     }
 
-    if (!form.universityId) {
+    const normalizedUniversityId = resolveUniversityId(form.universityId);
+
+    if (!normalizedUniversityId) {
       showToast("Please select a nearby university.", "error");
       return;
     }
@@ -136,11 +138,11 @@ export default function AddProperty() {
           description: form.description.trim(),
           price_per_month: Number(form.pricePerMonth),
           property_type: form.type,
-          university_id: form.universityId,
+          university_id: normalizedUniversityId,
           bedrooms: Number(form.bedrooms),
           bathrooms: Number(form.bathrooms),
           furnished: form.furnished,
-          image: form.image.trim() || null,
+          image: form.image ? form.image.trim() : null,
           distance_km: Number(form.distanceKm) || 0,
         }),
       });
@@ -254,7 +256,7 @@ export default function AddProperty() {
                   <option value="">Select university</option>
 
                   {universities.map((university) => (
-                    <option key={university.id} value={university.id}>
+                    <option key={university.id} value={university.dbId}>
                       {university.name}
                     </option>
                   ))}

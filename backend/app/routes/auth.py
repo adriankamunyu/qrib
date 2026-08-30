@@ -1,3 +1,5 @@
+import os
+
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import (
@@ -5,6 +7,8 @@ from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
 )
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from app.extensions import db
 from app.models import User
@@ -15,6 +19,35 @@ auth_bp = Blueprint(
     __name__,
     url_prefix="/api/auth"
 )
+
+
+def verify_google_credential(credential):
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+
+    if not client_id:
+        raise ValueError("Google client ID is not configured on the backend.")
+
+    try:
+        payload = id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            client_id,
+        )
+    except Exception as exc:
+        raise ValueError(f"Invalid Google credential: {exc}") from exc
+
+    email = (payload.get("email") or "").strip().lower()
+    name = (payload.get("name") or "").strip()
+    google_id = str(payload.get("sub") or "").strip()
+
+    if not email or not name or not google_id:
+        raise ValueError("Google account is missing required user details.")
+
+    return {
+        "email": email,
+        "name": name,
+        "google_id": google_id,
+    }
 
 
 def user_to_dict(user):
@@ -187,10 +220,22 @@ def login():
 def google_login():
     data = request.get_json(silent=True) or {}
 
+    credential = data.get("credential") or data.get("idToken") or data.get("token")
     email = (data.get("email") or "").strip().lower()
     name = (data.get("name") or "").strip()
     google_id = (data.get("googleId") or data.get("google_id") or "").strip()
     role = (data.get("role") or "student").strip().lower()
+
+    if credential:
+        try:
+            verified = verify_google_credential(credential)
+            email = verified["email"]
+            name = verified["name"]
+            google_id = verified["google_id"]
+        except ValueError as exc:
+            return jsonify({
+                "error": str(exc)
+            }), 401
 
     if not email or not name:
         return jsonify({
