@@ -21,6 +21,7 @@ class Payment(db.Model):
         nullable=False,
     )
 
+<<<<<<< HEAD
     property_id = db.Column(
         db.Integer,
         db.ForeignKey("properties.id"),
@@ -32,13 +33,25 @@ class Payment(db.Model):
     provider = db.Column(db.String(50), nullable=False, default="flutterwave")
     status = db.Column(db.String(30), nullable=False, default="pending")
     reference = db.Column(db.String(255), unique=True, nullable=False)
+=======
+    amount = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    currency = db.Column(db.String(10), nullable=False, default="KES")
+    status = db.Column(db.String(30), nullable=False, default="pending")
+    provider = db.Column(db.String(50), nullable=False, default="flutterwave")
+    reference = db.Column(db.String(120), nullable=False, unique=True)
+    transaction_id = db.Column(db.String(120), nullable=True)
+    gateway_response = db.Column(db.Text, nullable=True)
+>>>>>>> fix/backend-security-hardening
 
     created_at = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+<<<<<<< HEAD
 
+=======
+>>>>>>> fix/backend-security-hardening
     updated_at = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -46,6 +59,11 @@ class Payment(db.Model):
         nullable=False,
     )
 
+<<<<<<< HEAD
     booking = db.relationship("Booking", back_populates="payments")
     student = db.relationship("User", back_populates="payments")
     property = db.relationship("Property", back_populates="payments")
+=======
+    booking = db.relationship("Booking", backref="payment", uselist=False)
+    student = db.relationship("User", backref="payments")
+>>>>>>> fix/backend-security-hardening

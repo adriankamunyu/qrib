@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContextValue";
 
-
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 const TOKEN_KEY = "qrib_access_token";
 

@@ -22,15 +22,35 @@ bookings_bp = Blueprint(
 @bookings_bp.post("")
 @jwt_required()
 def create_booking():
+<<<<<<< HEAD
     data = request.get_json(silent=True) or {}
+=======
+    user_id = int(get_jwt_identity())
+
+    user = db.session.get(User, user_id)
+
+    if not user or user.role != "student":
+        return jsonify({
+            "error": "Only students can create bookings"
+        }), 403
+
+    data = request.get_json()
+>>>>>>> fix/backend-security-hardening
 
     if not data:
         return jsonify({
             "error": "Request body is required"
         }), 400
 
+<<<<<<< HEAD
     auth_user_id = int(get_jwt_identity())
     auth_user = db.session.get(User, auth_user_id)
+=======
+    required_fields = [
+        "property_id",
+        "move_in_date",
+    ]
+>>>>>>> fix/backend-security-hardening
 
     if not auth_user:
         return jsonify({"error": "Authenticated user not found"}), 404
@@ -57,6 +77,10 @@ def create_booking():
             "error": "You can only create a booking for your own account"
         }), 403
 
+<<<<<<< HEAD
+=======
+    # Validate date
+>>>>>>> fix/backend-security-hardening
     try:
         property_id = int(property_id)
         student_id = int(student_id)
@@ -88,8 +112,13 @@ def create_booking():
         }), 400
 
     booking = Booking(
+<<<<<<< HEAD
         property_id=property_id,
         student_id=student_id,
+=======
+        property_id=data["property_id"],
+        student_id=user_id,
+>>>>>>> fix/backend-security-hardening
         move_in_date=move_in_date,
         status="pending",
     )
@@ -114,9 +143,12 @@ def get_bookings():
     user_id = int(get_jwt_identity())
     user = db.session.get(User, user_id)
 
+<<<<<<< HEAD
     if not user:
         return jsonify({"error": "User not found"}), 404
 
+=======
+>>>>>>> fix/backend-security-hardening
     if user.role == "student":
         bookings = (
             Booking.query
@@ -124,7 +156,12 @@ def get_bookings():
             .order_by(Booking.id.desc())
             .all()
         )
+<<<<<<< HEAD
     elif user.role == "host":
+=======
+    else:
+        # Host sees bookings for their properties
+>>>>>>> fix/backend-security-hardening
         bookings = (
             Booking.query
             .join(Property)
@@ -132,8 +169,11 @@ def get_bookings():
             .order_by(Booking.id.desc())
             .all()
         )
+<<<<<<< HEAD
     else:
         bookings = []
+=======
+>>>>>>> fix/backend-security-hardening
 
     return jsonify([
         booking_to_dict(booking)
@@ -147,16 +187,23 @@ def get_bookings():
 # ============================================================
 
 @bookings_bp.get("/<int:booking_id>")
+@jwt_required()
 def get_booking(booking_id):
-    booking = db.session.get(
-        Booking,
-        booking_id
-    )
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+
+    booking = db.session.get(Booking, booking_id)
 
     if not booking:
         return jsonify({
             "error": "Booking not found"
         }), 404
+
+    if user.role == "student" and booking.student_id != user_id:
+        return jsonify({"error": "Access denied"}), 403
+
+    if user.role == "host" and booking.property.host_id != user_id:
+        return jsonify({"error": "Access denied"}), 403
 
     return jsonify({
         "booking": booking_to_dict(booking)
@@ -171,15 +218,24 @@ def get_booking(booking_id):
 @bookings_bp.patch("/<int:booking_id>")
 @jwt_required()
 def update_booking(booking_id):
-    booking = db.session.get(
-        Booking,
-        booking_id
-    )
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+
+    booking = db.session.get(Booking, booking_id)
 
     if not booking:
         return jsonify({
             "error": "Booking not found"
         }), 404
+
+    # Students can only cancel their own bookings
+    if user.role == "student":
+        if booking.student_id != user_id:
+            return jsonify({"error": "Access denied"}), 403
+    # Hosts can only update bookings on their properties
+    elif user.role == "host":
+        if booking.property.host_id != user_id:
+            return jsonify({"error": "Access denied"}), 403
 
     data = request.get_json()
 
@@ -188,18 +244,16 @@ def update_booking(booking_id):
             "error": "Request body is required"
         }), 400
 
-    # Allowed booking statuses
-    allowed_statuses = [
-        "pending",
-        "approved",
-        "rejected",
-        "cancelled",
-    ]
+    allowed_statuses = ["pending", "approved", "rejected", "cancelled"]
 
-    # Update status
     if "status" in data:
-
         status = data["status"]
+
+        # Students can only cancel
+        if user.role == "student" and status != "cancelled":
+            return jsonify({
+                "error": "Students can only cancel bookings"
+            }), 403
 
         if status not in allowed_statuses:
             return jsonify({
@@ -209,14 +263,11 @@ def update_booking(booking_id):
 
         booking.status = status
 
-    # Update move-in date
     if "move_in_date" in data:
-
         try:
             booking.move_in_date = date.fromisoformat(
                 data["move_in_date"]
             )
-
         except (ValueError, TypeError):
             return jsonify({
                 "error": "Invalid move_in_date format. Use YYYY-MM-DD"
