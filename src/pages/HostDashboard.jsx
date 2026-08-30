@@ -7,6 +7,27 @@ import { getUniversity } from "../data/universities";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 const TOKEN_KEY = "qrib_access_token";
+const HOST_VERIFICATION_KEY = "qrib_host_verification";
+
+function getHostVerificationState() {
+  try {
+    const raw = localStorage.getItem(HOST_VERIFICATION_KEY);
+    if (!raw) return null;
+
+    const data = JSON.parse(raw);
+    return {
+      legalName: Boolean(data.legalName && String(data.legalName).trim()),
+      phone: Boolean(data.phone && String(data.phone).trim()),
+      idNumber: Boolean(data.idNumber && String(data.idNumber).trim()),
+      ownershipProof: Boolean(data.ownershipProof && String(data.ownershipProof).trim()),
+      address: Boolean(data.address && String(data.address).trim()),
+      photoUploaded: Boolean(data.photoUploaded),
+      agreed: Boolean(data.agreed),
+    };
+  } catch {
+    return null;
+  }
+}
 
 function normalizeListing(listing) {
   return {
@@ -33,6 +54,11 @@ export default function HostDashboard() {
   const [hostListings, setHostListings] = useState([]);
   const [bookingRequests, setBookingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const verificationState = getHostVerificationState();
+  const verificationComplete = verificationState
+    ? Object.values(verificationState).every(Boolean)
+    : false;
 
   useEffect(() => {
     if (!user) return;
@@ -125,11 +151,35 @@ export default function HostDashboard() {
               Host information
             </Link>
 
-            <Link to="/host/add-property" className="bg-brand text-white px-4 py-2 rounded-lg font-bold hover:opacity-90">
-              + Add property
+            <Link
+              to={verificationComplete ? "/host/add-property" : "/host"}
+              className={`px-4 py-2 rounded-lg font-bold ${verificationComplete ? "bg-brand text-white hover:opacity-90" : "bg-slate-200 text-slate-500 cursor-not-allowed"}`}
+              onClick={(event) => {
+                if (!verificationComplete) {
+                  event.preventDefault();
+                  window.location.href = "/host";
+                }
+              }}
+            >
+              {verificationComplete ? "+ Add property" : "Complete verification"}
             </Link>
           </div>
         </div>
+
+        {!verificationComplete && (
+          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="font-bold">Complete host verification to publish a property</p>
+                <p className="text-sm mt-1">You must verify your identity, property authority, and listing details before listing on Qrib.</p>
+              </div>
+
+              <Link to="/host" className="inline-flex items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-700">
+                Finish verification
+              </Link>
+            </div>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-6 mt-10">
           <div className="border border-line rounded-xl p-6">
