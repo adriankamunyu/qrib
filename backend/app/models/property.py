@@ -64,3 +64,27 @@ class Property(db.Model):
         back_populates="property",
         lazy=True,
     )
+
+    images = db.relationship(
+        "PropertyImage",
+        back_populates="property",
+        lazy=True,
+    )
+
+    payments = db.relationship(
+        "Payment",
+        back_populates="property",
+        lazy=True,
+    )
+
+    messages = db.relationship(
+        "Message",
+        back_populates="property",
+        lazy=True,
+    )
+
+    reviews = db.relationship(
+        "Review",
+        back_populates="property",
+        lazy=True,
+    )
