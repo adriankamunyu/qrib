@@ -4,9 +4,23 @@ import { getUniversity } from "../data/universities";
 const fallbackImage =
   "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80";
 
+function getSafeImageUrl(imageUrl) {
+  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+    return fallbackImage;
+  }
+
+  const trimmed = imageUrl.trim();
+
+  if (trimmed.startsWith("data:image/")) {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
 export default function PropertyCard({ listing }) {
   const uni = getUniversity(listing.universityId);
-  const imageSrc = listing.image || fallbackImage;
+  const imageSrc = getSafeImageUrl(listing.image);
 
   return (
     <Link
@@ -17,6 +31,7 @@ export default function PropertyCard({ listing }) {
         <img
           src={imageSrc}
           alt={listing.title}
+          loading="lazy"
           onError={(event) => {
             event.currentTarget.src = fallbackImage;
           }}

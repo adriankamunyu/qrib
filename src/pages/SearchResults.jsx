@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import MapView from "../components/MapView";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 
 function normalizeProperty(property) {
   return {
@@ -49,6 +49,7 @@ export default function SearchResults() {
 
   const query = searchParams.get("q") || "";
   const area = searchParams.get("area") || "";
+  const city = searchParams.get("city") || "";
   const budget = searchParams.get("budget") || "Any budget";
   const propertyType =
     searchParams.get("type") || "Any type";
@@ -121,6 +122,10 @@ export default function SearchResults() {
       .trim()
       .toLowerCase();
 
+    const normalizedCity = city
+      .trim()
+      .toLowerCase();
+
     // SEARCH
     if (normalizedQuery) {
       result = result.filter((listing) => {
@@ -149,6 +154,15 @@ export default function SearchResults() {
         String(listing.area || "")
           .toLowerCase()
           .includes(normalizedArea)
+      );
+    }
+
+    // CITY
+    if (normalizedCity) {
+      result = result.filter((listing) =>
+        String(listing.city || "")
+          .toLowerCase()
+          .includes(normalizedCity)
       );
     }
 
@@ -204,6 +218,7 @@ export default function SearchResults() {
     listings,
     query,
     area,
+    city,
     budget,
     propertyType,
   ]);
@@ -211,6 +226,7 @@ export default function SearchResults() {
   const activeFilters = [
     query,
     area,
+    city,
     budget !== "Any budget" ? budget : "",
     propertyType !== "Any type"
       ? propertyType
@@ -282,7 +298,15 @@ export default function SearchResults() {
 
         {/* RESULTS */}
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_420px]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[420px_1fr]">
+
+          {/* MAP */}
+
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <MapView listings={results} />
+            </div>
+          </aside>
 
           <section>
             <div className="mb-5 flex items-center justify-between">
@@ -340,14 +364,6 @@ export default function SearchResults() {
               </div>
             )}
           </section>
-
-          {/* MAP */}
-
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
-              <MapView listings={results} />
-            </div>
-          </aside>
         </div>
       </main>
 

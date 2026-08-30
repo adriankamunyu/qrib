@@ -5,7 +5,10 @@ import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import { universities } from "../data/universities";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
+
+const fallbackHomeImage =
+  "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80";
 
 const destinations = [
   {
@@ -29,11 +32,24 @@ const destinations = [
     img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&q=80",
   },
   {
-    city: "Kasarani",
-    blurb: "Fast-growing student area with easy transport",
+    city: "Kisumu",
+    blurb: "Student-friendly neighborhoods around Maseno",
     img: "https://images.unsplash.com/photo-1448630360428-65456885c650?w=900&q=80",
   },
+  {
+    city: "Nakuru",
+    blurb: "Budget homes near campus and transport hubs",
+    img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&q=80",
+  },
 ];
+
+function getSafeImageUrl(imageUrl) {
+  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+    return fallbackHomeImage;
+  }
+
+  return imageUrl.trim();
+}
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -122,8 +138,11 @@ export default function Home() {
       <section className="relative overflow-hidden bg-slate-950">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1600&q=80"
+            src={getSafeImageUrl("https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1600&q=80")}
             alt="Student accommodation"
+            onError={(event) => {
+              event.currentTarget.src = fallbackHomeImage;
+            }}
             className="h-full w-full object-cover"
           />
 
@@ -422,8 +441,12 @@ export default function Home() {
               >
 
                 <img
-                  src={destination.img}
+                  src={getSafeImageUrl(destination.img)}
                   alt={destination.city}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.src = fallbackHomeImage;
+                  }}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
 

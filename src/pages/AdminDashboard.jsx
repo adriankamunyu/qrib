@@ -14,6 +14,12 @@ const recentUsers = [
   { name: "Mercy Wambui", email: "mercy@googlemail.com", role: "Student" },
 ];
 
+const moderationQueue = [
+  { id: 1, title: "Kisumu Shared Apartment", host: "Peace Njeri", reason: "Needs improved photos", priority: "Medium" },
+  { id: 2, title: "Kilimani Studio", host: "Ben Wachira", reason: "Reported by student for misleading price", priority: "High" },
+  { id: 3, title: "Nakuru Residence", host: "Lilian Kariuki", reason: "Missing verification details", priority: "Low" },
+];
+
 const feedItems = [
   "New host approval request from Kileleshwa listings.",
   "Campus demand spike detected in Nairobi West.",
@@ -113,39 +119,85 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-                User management
-              </p>
-              <h2 className="mt-1 text-xl font-black text-slate-900">Recent users</h2>
+        <section className="mt-10 grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Moderation queue
+                </p>
+                <h2 className="mt-1 text-xl font-black text-slate-900">Listing reviews</h2>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {moderationQueue.map((item) => (
+                <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-slate-800">{item.title}</p>
+                      <p className="text-sm text-slate-500">Host: {item.host}</p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      item.priority === "High"
+                        ? "bg-red-100 text-red-700"
+                        : item.priority === "Medium"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      {item.priority}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm text-slate-600">{item.reason}</p>
+
+                  <div className="mt-4 flex gap-3">
+                    <button type="button" className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">
+                      Approve
+                    </button>
+                    <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                      Review later
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-left">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Name</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Email</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Role</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {recentUsers.map((person) => (
-                  <tr key={person.email}>
-                    <td className="px-4 py-3 font-semibold text-slate-800">{person.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{person.email}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                        {person.role}
-                      </span>
-                    </td>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  User management
+                </p>
+                <h2 className="mt-1 text-xl font-black text-slate-900">Recent users</h2>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-200 text-left">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Name</th>
+                    <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Email</th>
+                    <th className="px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Role</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {recentUsers.map((person) => (
+                    <tr key={person.email}>
+                      <td className="px-4 py-3 font-semibold text-slate-800">{person.name}</td>
+                      <td className="px-4 py-3 text-slate-600">{person.email}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                          {person.role}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       </main>
