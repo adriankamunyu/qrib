@@ -48,6 +48,9 @@ def create_app():
     migrate.init_app(app, db)
     JWTManager(app)
 
+    with app.app_context():
+        db.create_all()
+
     # ============================================================
     # CORS
     # ============================================================
