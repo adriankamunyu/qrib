@@ -22,67 +22,74 @@ bookings_bp = Blueprint(
 @bookings_bp.post("")
 @jwt_required()
 def create_booking():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
     if not data:
         return jsonify({
             "error": "Request body is required"
         }), 400
 
-    required_fields = [
-        "property_id",
-        "student_id",
-        "move_in_date",
-    ]
+    auth_user_id = int(get_jwt_identity())
+    auth_user = db.session.get(User, auth_user_id)
 
-    missing = [
-        field
-        for field in required_fields
-        if data.get(field) in (None, "")
-    ]
+    if not auth_user:
+        return jsonify({"error": "Authenticated user not found"}), 404
 
-    if missing:
+    if auth_user.role not in {"student", "admin"}:
         return jsonify({
-            "error": "Missing required fields",
-            "fields": missing
+            "error": "Only students can create bookings"
+        }), 403
+
+    property_id = data.get("property_id")
+    student_id = data.get("student_id", auth_user_id)
+
+    if property_id in (None, ""):
+        return jsonify({
+            "error": "Missing required field",
+            "field": "property_id"
         }), 400
 
-    # Check property exists
-    property = db.session.get(
-        Property,
-        data["property_id"]
-    )
+    if student_id in (None, ""):
+        student_id = auth_user_id
 
-    if not property:
+    if int(student_id) != auth_user_id and auth_user.role != "admin":
         return jsonify({
-            "error": "Property not found"
-        }), 404
+            "error": "You can only create a booking for your own account"
+        }), 403
 
-    # Check student exists
-    student = db.session.get(
-        User,
-        data["student_id"]
-    )
-
-    if not student:
-        return jsonify({
-            "error": "Student not found"
-        }), 404
-
-    # Validate date
     try:
-        move_in_date = date.fromisoformat(
-            data["move_in_date"]
-        )
+        property_id = int(property_id)
+        student_id = int(student_id)
+    except (TypeError, ValueError):
+        return jsonify({
+            "error": "property_id and student_id must be integers"
+        }), 400
+
+    property = db.session.get(Property, property_id)
+    if not property:
+        return jsonify({"error": "Property not found"}), 404
+
+    student = db.session.get(User, student_id)
+    if not student:
+        return jsonify({"error": "Student not found"}), 404
+
+    move_in_date = data.get("move_in_date")
+    if not move_in_date:
+        return jsonify({
+            "error": "Missing required field",
+            "field": "move_in_date"
+        }), 400
+
+    try:
+        move_in_date = date.fromisoformat(str(move_in_date))
     except (ValueError, TypeError):
         return jsonify({
             "error": "Invalid move_in_date format. Use YYYY-MM-DD"
         }), 400
 
-    # Create booking
     booking = Booking(
-        property_id=data["property_id"],
-        student_id=data["student_id"],
+        property_id=property_id,
+        student_id=student_id,
         move_in_date=move_in_date,
         status="pending",
     )
