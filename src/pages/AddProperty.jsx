@@ -40,6 +40,7 @@ export default function AddProperty() {
   });
 
   const [amenities, setAmenities] = useState([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const update = (key) => (e) => {
     setForm((current) => ({
@@ -54,6 +55,36 @@ export default function AddProperty() {
         ? current.filter((item) => item !== amenity)
         : [...current, amenity]
     );
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload an image file.", "error");
+      return;
+    }
+
+    setUploadingImage(true);
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setForm((current) => ({ ...current, image: result }));
+      setUploadingImage(false);
+    };
+
+    reader.onerror = () => {
+      showToast("The image could not be read. Please try another file.", "error");
+      setUploadingImage(false);
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const [submitting, setSubmitting] = useState(false);
@@ -379,20 +410,35 @@ export default function AddProperty() {
             <div className="space-y-5 mt-5">
               <div>
                 <label className="block text-sm font-semibold text-ink mb-2">
-                  Property image URL
+                  Property image
                 </label>
 
-                <input
-                  type="url"
-                  value={form.image}
-                  onChange={update("image")}
-                  placeholder="https://example.com/property.jpg"
-                  className="w-full border border-slate-200 rounded-lg p-3.5"
-                />
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700 file:mr-4 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
+                  />
+
+                  <input
+                    type="url"
+                    value={form.image.startsWith("data:image") ? "" : form.image}
+                    onChange={update("image")}
+                    placeholder="Or paste an image URL"
+                    className="w-full border border-slate-200 rounded-lg p-3.5"
+                  />
+                </div>
 
                 <p className="text-xs text-muted mt-2">
-                  You can leave this empty and Qrib will use a default image.
+                  Upload a photo from your device, or paste a direct image URL. If both are empty, Qrib will use a default listing image.
                 </p>
+
+                {uploadingImage && (
+                  <p className="mt-2 text-xs font-semibold text-blue-600">
+                    Uploading image...
+                  </p>
+                )}
               </div>
 
               <div>

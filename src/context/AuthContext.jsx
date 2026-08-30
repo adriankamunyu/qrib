@@ -7,9 +7,7 @@ const TOKEN_KEY = "qrib_access_token";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-const [ready, setReady] = useState(
-  () => !localStorage.getItem(TOKEN_KEY)
-);
+  const [ready, setReady] = useState(false);
 
   // =========================================================
   // RESTORE EXISTING LOGIN SESSION
@@ -18,6 +16,7 @@ const [ready, setReady] = useState(
     const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) {
+      setReady(true);
       return;
     }
 
@@ -111,6 +110,68 @@ const [ready, setReady] = useState(
   };
 
   // =========================================================
+  // GOOGLE LOGIN
+  // =========================================================
+  const googleLogin = async ({
+    name,
+    email,
+    googleId,
+    role = "student",
+  }) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          googleId,
+          role,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          ok: false,
+          message:
+            data.error ||
+            data.message ||
+            data.msg ||
+            "Google sign-in failed.",
+        };
+      }
+
+      if (!data.access_token) {
+        return {
+          ok: false,
+          message:
+            "Google authentication succeeded but the server did not return a token.",
+        };
+      }
+
+      localStorage.setItem(TOKEN_KEY, data.access_token);
+      setUser(data.user);
+
+      return {
+        ok: true,
+        user: data.user,
+      };
+    } catch (error) {
+      console.error("Google login error:", error);
+
+      return {
+        ok: false,
+        message:
+          "Unable to connect to the Google sign-in API.",
+      };
+    }
+  };
+
+  // =========================================================
   // SIGNUP
   // =========================================================
   const signup = async ({
@@ -197,6 +258,7 @@ const [ready, setReady] = useState(
         ready,
         login,
         signup,
+        googleLogin,
         logout,
       }}
     >

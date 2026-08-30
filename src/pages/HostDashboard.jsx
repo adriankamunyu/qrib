@@ -123,8 +123,8 @@ const hostListings = useMemo(() => {
           {hostListings.length === 0 ? (
             <div className="border border-line rounded-2xl p-10 text-center">
 
-              <div className="w-14 h-14 mx-auto rounded-full bg-brand/10 flex items-center justify-center text-2xl">
-                🏠
+              <div className="w-14 h-14 mx-auto rounded-full bg-brand/10 flex items-center justify-center text-2xl font-black text-brand">
+                H
               </div>
 
               <h3 className="text-xl font-bold text-ink mt-4">

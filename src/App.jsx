@@ -14,6 +14,7 @@ import AddProperty from "./pages/AddProperty";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentProfile from "./pages/StudentProfile";
 import SavedHomes from "./pages/SavedHomes";
+import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function RoleHomeRedirect() {
@@ -43,6 +44,10 @@ function RoleHomeRedirect() {
 
   if (user.role === "host") {
     return <Navigate to="/host/dashboard" replace />;
+  }
+
+  if (user.role === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return <Navigate to="/login" replace />;
@@ -146,6 +151,15 @@ function App() {
               element={
                 <ProtectedRoute role="host">
                   <HostDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

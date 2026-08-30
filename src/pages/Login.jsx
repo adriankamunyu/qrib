@@ -7,7 +7,7 @@ export default function Login() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const { login, signup } = useAuth();
+  const { login, signup, googleLogin } = useAuth();
   const { showToast } = useToast();
 
   const [mode, setMode] = useState(
@@ -57,6 +57,50 @@ export default function Login() {
   // ---------------------------------------------------------
   // SUBMIT
   // ---------------------------------------------------------
+
+  const handleGoogleLogin = async () => {
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+      const demoGoogleUser = {
+        name: "Google Demo User",
+        email: "demo.google@qrib.app",
+        googleId: "google-demo-user-001",
+        role: "student",
+      };
+
+      const result = await googleLogin(demoGoogleUser);
+
+      if (!result || !result.ok) {
+        showToast(
+          result?.message || "Google sign-in failed.",
+          "error"
+        );
+        return;
+      }
+
+      showToast("Google sign-in successful.", "success");
+
+      if (result.user?.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+
+      if (result.user?.role === "host") {
+        navigate("/host/dashboard", { replace: true });
+        return;
+      }
+
+      navigate("/student/dashboard", { replace: true });
+    } catch (error) {
+      console.error("Google login error:", error);
+      showToast("Google sign-in is unavailable right now.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -480,12 +524,7 @@ export default function Login() {
           <button
             type="button"
             disabled={loading}
-            onClick={() =>
-              showToast(
-                "Google sign-in is not connected yet.",
-                "info"
-              )
-            }
+            onClick={handleGoogleLogin}
             className="w-full border border-slate-200 bg-white flex items-center justify-center gap-3 p-3.5 rounded-xl font-semibold text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
 

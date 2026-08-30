@@ -10,23 +10,28 @@ const API_URL = import.meta.env.VITE_API_URL;
 const destinations = [
   {
     city: "Nairobi",
-    blurb: "Home to UoN, KU, Strathmore, USIU & more",
-    img: "https://images.unsplash.com/photo-1611348524140-53c9a25263d6?w=700&q=80",
+    blurb: "UoN, KU, Strathmore, USIU & city living",
+    img: "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?w=900&q=80",
   },
   {
     city: "Kiambu",
-    blurb: "JKUAT & surrounding student towns",
-    img: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=700&q=80",
+    blurb: "JKUAT homes plus quieter residential spaces",
+    img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&q=80",
   },
   {
     city: "Eldoret",
-    blurb: "Moi University neighbourhood",
-    img: "https://images.unsplash.com/photo-1602343168117-bb8ffe3e2e9f?w=700&q=80",
+    blurb: "Affordable student rooms near Moi University",
+    img: "https://images.unsplash.com/photo-1460317442991-0ec209397118?w=900&q=80",
   },
   {
     city: "Njoro",
-    blurb: "Egerton University area",
-    img: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700&q=80",
+    blurb: "Quiet, budget-friendly homes around Egerton",
+    img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&q=80",
+  },
+  {
+    city: "Kasarani",
+    blurb: "Fast-growing student area with easy transport",
+    img: "https://images.unsplash.com/photo-1448630360428-65456885c650?w=900&q=80",
   },
 ];
 
@@ -313,8 +318,8 @@ export default function Home() {
         {!loading && error && (
           <div className="rounded-2xl border border-red-100 bg-red-50 p-8 text-center">
 
-            <div className="text-3xl">
-              ⚠️
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-lg font-black text-red-600">
+              !
             </div>
 
             <p className="mt-3 font-bold text-red-700">
@@ -355,8 +360,8 @@ export default function Home() {
           featured.length === 0 && (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
 
-              <div className="text-4xl">
-                🏠
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-black text-blue-700">
+                H
               </div>
 
               <p className="mt-3 font-bold text-slate-700">
