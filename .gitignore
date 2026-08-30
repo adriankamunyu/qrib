@@ -32,6 +32,8 @@ backend/instance/
 # Frontend env
 .env
 .env.local
+.env*
 
 .vercel/
+.vercel.production
 .env.vercel.production

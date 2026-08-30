@@ -51,20 +51,38 @@ def create_app():
     # CORS
     # ============================================================
 
-    default_origins = [
+    configured_origins = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    allowed_origins = [
+        "http://172.29.254.86:5173",
         "http://localhost:5173",
+        "http://localhost:4173",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
         "http://0.0.0.0:5173",
+        "https://qrib-mu.vercel.app",
+        "https://*.vercel.app",
+        "https://qrib-f4sk.onrender.com",
+        os.getenv("FRONTEND_URL", "https://qrib-mu.vercel.app"),
+        os.getenv("VERCEL_URL", ""),
     ]
-    configured_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+
     if configured_origins:
-        default_origins.extend(
-            [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+        allowed_origins.extend(
+            origin.strip()
+            for origin in configured_origins.split(",")
+            if origin.strip()
         )
+
+    allowed_origins = [
+        origin.strip()
+        for origin in allowed_origins
+        if origin and origin.strip()
+    ]
+    allowed_origins = list(dict.fromkeys(allowed_origins))
 
     CORS(
         app,
-        resources={r"/api/*": {"origins": default_origins}},
+        resources={r"/api/*": {"origins": allowed_origins}},
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
         supports_credentials=True,

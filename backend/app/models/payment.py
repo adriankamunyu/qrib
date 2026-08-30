@@ -21,11 +21,17 @@ class Payment(db.Model):
         nullable=False,
     )
 
+    property_id = db.Column(
+        db.Integer,
+        db.ForeignKey("properties.id"),
+        nullable=False,
+    )
+
     amount = db.Column(db.Numeric(10, 2), nullable=False, default=0)
     currency = db.Column(db.String(10), nullable=False, default="KES")
-    status = db.Column(db.String(30), nullable=False, default="pending")
     provider = db.Column(db.String(50), nullable=False, default="flutterwave")
-    reference = db.Column(db.String(120), nullable=False, unique=True)
+    status = db.Column(db.String(30), nullable=False, default="pending")
+    reference = db.Column(db.String(255), unique=True, nullable=False)
     transaction_id = db.Column(db.String(120), nullable=True)
     gateway_response = db.Column(db.Text, nullable=True)
 
@@ -34,6 +40,7 @@ class Payment(db.Model):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
     updated_at = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -41,5 +48,6 @@ class Payment(db.Model):
         nullable=False,
     )
 
-    booking = db.relationship("Booking", backref="payment", uselist=False)
-    student = db.relationship("User", backref="payments")
+    booking = db.relationship("Booking", back_populates="payments")
+    student = db.relationship("User", back_populates="payments")
+    property = db.relationship("Property", back_populates="payments")

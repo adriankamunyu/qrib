@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import { useAuth } from "../context/useAuth";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 
 const SAVED_LISTINGS_KEY = "qrib_saved_listings";
 const TOKEN_KEY = "qrib_access_token";
@@ -309,6 +309,27 @@ export default function StudentDashboard() {
   /* =======================================================
      USER
   ======================================================= */
+
+  const savedProfile = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("qrib_student_profile")) || {};
+    } catch {
+      return {};
+    }
+  })();
+
+  const profileCompletion = (() => {
+    const fields = [
+      savedProfile.phone,
+      savedProfile.university,
+      savedProfile.course,
+      savedProfile.yearOfStudy,
+      savedProfile.studentId,
+      savedProfile.bio,
+    ];
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
+  })();
 
   const firstName = user?.name
     ? user.name.split(" ")[0]
@@ -860,12 +881,15 @@ export default function StudentDashboard() {
                     </span>
 
                     <span className="text-xs font-black text-blue-600">
-                      40%
+                      {profileCompletion}%
                     </span>
                   </div>
 
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full w-[40%] rounded-full bg-blue-600" />
+                    <div
+                      className="h-full rounded-full bg-blue-600 transition-all"
+                      style={{ width: `${profileCompletion}%` }}
+                    />
                   </div>
                 </div>
 
