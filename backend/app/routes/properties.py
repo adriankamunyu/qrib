@@ -145,6 +145,12 @@ def create_property():
             "error": "Only hosts can create properties"
         }), 403
 
+    university_exists = db.session.get(University, normalized_university_id)
+    if not university_exists:
+        return jsonify({
+            "error": f"Selected university ID {normalized_university_id} is invalid or not available. Please choose a valid university."
+        }), 400
+
     property = Property(
         title=data["title"],
         area=data["area"],

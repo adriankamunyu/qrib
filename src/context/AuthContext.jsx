@@ -29,6 +29,10 @@ export function AuthProvider({ children }) {
         const data = await response.json();
 
         if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem(TOKEN_KEY);
+          }
+
           throw new Error(
             data.error ||
               data.message ||
