@@ -50,8 +50,18 @@ def create_app():
     allowed_origins = [
         "http://172.29.254.86:5173",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://qrib-mu.vercel.app",
+        "https://*.vercel.app",
         os.getenv("FRONTEND_URL", "https://qrib-mu.vercel.app"),
+        os.getenv("VERCEL_URL", ""),
     ]
+    allowed_origins = [
+        origin.strip()
+        for origin in allowed_origins
+        if origin and origin.strip()
+    ]
+    allowed_origins = list(dict.fromkeys(allowed_origins))
 
     CORS(
         app,
