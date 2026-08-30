@@ -134,6 +134,11 @@ def login():
     if not user:
         return jsonify({"error": "Invalid email or password"}), 401
 
+    if user.hashed_password is None:
+        return jsonify({
+            "error": "This account uses Google sign-in. Please use the Google login button instead."
+        }), 400
+
     if not check_password_hash(user.hashed_password, password):
         return jsonify({"error": "Invalid email or password"}), 401
 
@@ -143,6 +148,38 @@ def login():
         "message": "Login successful",
         "access_token": access_token,
         "user": user_to_dict(user),
+    }), 200
+
+
+@auth_bp.post("/reset-password")
+def reset_password():
+    data = request.get_json(silent=True) or {}
+
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("new_password") or data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email and new password are required"}), 400
+
+    if len(str(password)) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        return jsonify({"error": "No account was found for that email."}), 404
+
+    if user.auth_provider == "google" and user.hashed_password is None:
+        return jsonify({
+            "error": "This account uses Google sign-in. Please continue with Google login."
+        }), 400
+
+    user.hashed_password = generate_password_hash(str(password))
+    user.auth_provider = user.auth_provider or "local"
+    db.session.commit()
+
+    return jsonify({
+        "message": "Password updated successfully. You can now log in with your new password.",
     }), 200
 
 
