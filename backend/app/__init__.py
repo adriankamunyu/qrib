@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import timedelta
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -70,6 +71,7 @@ def create_app():
     if not jwt_secret:
         raise RuntimeError("JWT_SECRET_KEY environment variable is not set")
     app.config["JWT_SECRET_KEY"] = jwt_secret
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
 
     # ============================================================
     # INITIALIZE EXTENSIONS
@@ -156,6 +158,21 @@ def create_app():
                 response.headers["Access-Control-Max-Age"] = "600"
 
         return response
+
+    @app.route("/api/<path:subpath>", methods=["OPTIONS"])
+    def api_preflight(subpath):
+        origin = request.headers.get("Origin")
+        if not origin or not is_allowed_origin(origin):
+            return jsonify({"error": "Origin not allowed"}), 403
+
+        response = jsonify({"ok": True})
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Max-Age"] = "600"
+        response.headers["Vary"] = "Origin"
+        return response, 200
 
     CORS(
         app,

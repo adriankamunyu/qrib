@@ -27,6 +27,8 @@ export default function Login() {
       if (!window.google?.accounts?.id) return;
       if (window.__qrib_google_initialized) return;
 
+      window.__qrib_google_initialized = true;
+
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: async (response) => {
@@ -67,12 +69,19 @@ export default function Login() {
       return;
     }
 
+    if (window.__qrib_google_script_loaded) {
+      return;
+    }
+
     const script = document.createElement("script");
     script.id = scriptId;
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
-    script.onload = initializeGoogle;
+    script.onload = () => {
+      window.__qrib_google_script_loaded = true;
+      initializeGoogle();
+    };
 
     document.body.appendChild(script);
 
