@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import SearchResults from "./pages/SearchResults";
 import AccommodationDetails from "./pages/AccommodationDetails";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import PaymentPage from "./pages/PaymentPage";
 import Help from "./pages/Help";
 import HostInfo from "./pages/HostInfo";
 import HostDashboard from "./pages/HostDashboard";
@@ -14,6 +15,8 @@ import AddProperty from "./pages/AddProperty";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentProfile from "./pages/StudentProfile";
 import SavedHomes from "./pages/SavedHomes";
+import StudentMessages from "./pages/StudentMessages";
+import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function RoleHomeRedirect() {
@@ -43,6 +46,10 @@ function RoleHomeRedirect() {
 
   if (user.role === "host") {
     return <Navigate to="/host/dashboard" replace />;
+  }
+
+  if (user.role === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return <Navigate to="/login" replace />;
@@ -93,6 +100,11 @@ function App() {
             />
 
             <Route
+              path="/payment/:bookingId"
+              element={<PaymentPage />}
+            />
+
+            <Route
               path="/help"
               element={<Help />}
             />
@@ -137,6 +149,15 @@ function App() {
               }
             />
 
+            <Route
+              path="/student/messages"
+              element={
+                <ProtectedRoute role="student">
+                  <StudentMessages />
+                </ProtectedRoute>
+              }
+            />
+
             {/* =================================================
                 HOST DASHBOARD
             ================================================== */}
@@ -146,6 +167,15 @@ function App() {
               element={
                 <ProtectedRoute role="host">
                   <HostDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

@@ -2,3 +2,9 @@ from .user import User
 from .university import University
 from .property import Property
 from .booking import Booking
+from .payment import Payment
+from .property_image import PropertyImage
+from .message import Message
+from .notification import Notification
+from .host_verification import HostVerification
+from .review import Review
