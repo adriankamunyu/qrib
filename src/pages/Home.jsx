@@ -5,30 +5,51 @@ import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import { universities } from "../data/universities";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
+
+const fallbackHomeImage =
+  "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80";
 
 const destinations = [
   {
     city: "Nairobi",
-    blurb: "Home to UoN, KU, Strathmore, USIU & more",
-    img: "https://images.unsplash.com/photo-1611348524140-53c9a25263d6?w=700&q=80",
+    blurb: "UoN, KU, Strathmore, USIU & city living",
+    img: "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?w=900&q=80",
   },
   {
     city: "Kiambu",
-    blurb: "JKUAT & surrounding student towns",
-    img: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=700&q=80",
+    blurb: "JKUAT homes plus quieter residential spaces",
+    img: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&q=80",
   },
   {
     city: "Eldoret",
-    blurb: "Moi University neighbourhood",
-    img: "https://images.unsplash.com/photo-1602343168117-bb8ffe3e2e9f?w=700&q=80",
+    blurb: "Affordable student rooms near Moi University",
+    img: "https://images.unsplash.com/photo-1460317442991-0ec209397118?w=900&q=80",
   },
   {
     city: "Njoro",
-    blurb: "Egerton University area",
-    img: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700&q=80",
+    blurb: "Quiet, budget-friendly homes around Egerton",
+    img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&q=80",
+  },
+  {
+    city: "Kisumu",
+    blurb: "Student-friendly neighborhoods around Maseno",
+    img: "https://images.unsplash.com/photo-1448630360428-65456885c650?w=900&q=80",
+  },
+  {
+    city: "Nakuru",
+    blurb: "Budget homes near campus and transport hubs",
+    img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&q=80",
   },
 ];
+
+function getSafeImageUrl(imageUrl) {
+  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+    return fallbackHomeImage;
+  }
+
+  return imageUrl.trim();
+}
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -117,8 +138,11 @@ export default function Home() {
       <section className="relative overflow-hidden bg-slate-950">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1600&q=80"
+            src={getSafeImageUrl("https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1600&q=80")}
             alt="Student accommodation"
+            onError={(event) => {
+              event.currentTarget.src = fallbackHomeImage;
+            }}
             className="h-full w-full object-cover"
           />
 
@@ -313,8 +337,8 @@ export default function Home() {
         {!loading && error && (
           <div className="rounded-2xl border border-red-100 bg-red-50 p-8 text-center">
 
-            <div className="text-3xl">
-              ⚠️
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-lg font-black text-red-600">
+              !
             </div>
 
             <p className="mt-3 font-bold text-red-700">
@@ -355,8 +379,8 @@ export default function Home() {
           featured.length === 0 && (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
 
-              <div className="text-4xl">
-                🏠
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-black text-blue-700">
+                H
               </div>
 
               <p className="mt-3 font-bold text-slate-700">
@@ -417,8 +441,12 @@ export default function Home() {
               >
 
                 <img
-                  src={destination.img}
+                  src={getSafeImageUrl(destination.img)}
                   alt={destination.city}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.src = fallbackHomeImage;
+                  }}
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
 

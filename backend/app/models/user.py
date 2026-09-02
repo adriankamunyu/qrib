@@ -68,3 +68,42 @@ class User(db.Model):
         back_populates="student",
         lazy=True
     )
+
+    payments = db.relationship(
+        "Payment",
+        back_populates="student",
+        lazy=True,
+    )
+
+    sent_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.sender_id",
+        back_populates="sender",
+        lazy=True,
+    )
+
+    received_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.receiver_id",
+        back_populates="receiver",
+        lazy=True,
+    )
+
+    notifications = db.relationship(
+        "Notification",
+        back_populates="user",
+        lazy=True,
+    )
+
+    verification = db.relationship(
+        "HostVerification",
+        back_populates="host",
+        uselist=False,
+        lazy=True,
+    )
+
+    reviews = db.relationship(
+        "Review",
+        back_populates="user",
+        lazy=True,
+    )
