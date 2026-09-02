@@ -87,7 +87,7 @@ export default function Navbar() {
               {user.role === "student" && (
                 <>
                   <Link
-                    to="/search"
+                    to="/student/saved"
                     className="text-sm font-semibold text-slate-800 transition hover:text-brand"
                   >
                     Saved homes
