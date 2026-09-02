@@ -89,6 +89,14 @@ export default function AddProperty() {
 
   const [submitting, setSubmitting] = useState(false);
 
+  const isValidImageValue = (value) => {
+    if (!value) {
+      return true;
+    }
+
+    return /^https?:\/\//i.test(value.trim()) || /^data:image\//i.test(value.trim());
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -120,8 +128,8 @@ export default function AddProperty() {
       return;
     }
 
-    if (form.image && !/^https?:\/\/.+/.test(form.image.trim())) {
-      showToast("Please enter a valid image URL or leave the image field empty.", "error");
+    if (!isValidImageValue(form.image)) {
+      showToast("Please enter a valid image URL, upload a valid image, or leave the image field empty.", "error");
       return;
     }
 
