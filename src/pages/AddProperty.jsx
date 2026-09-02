@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 const TOKEN_KEY = "qrib_access_token";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { universities } from "../data/universities";
+import { universities, resolveUniversityId } from "../data/universities";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 
@@ -40,6 +40,7 @@ export default function AddProperty() {
   });
 
   const [amenities, setAmenities] = useState([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const update = (key) => (e) => {
     setForm((current) => ({
@@ -56,7 +57,45 @@ export default function AddProperty() {
     );
   };
 
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload an image file.", "error");
+      return;
+    }
+
+    setUploadingImage(true);
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setForm((current) => ({ ...current, image: result }));
+      setUploadingImage(false);
+    };
+
+    reader.onerror = () => {
+      showToast("The image could not be read. Please try another file.", "error");
+      setUploadingImage(false);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   const [submitting, setSubmitting] = useState(false);
+
+  const isValidImageValue = (value) => {
+    if (!value) {
+      return true;
+    }
+
+    return /^https?:\/\//i.test(value.trim()) || /^data:image\//i.test(value.trim());
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,7 +111,9 @@ export default function AddProperty() {
       return;
     }
 
-    if (!form.universityId) {
+    const normalizedUniversityId = resolveUniversityId(form.universityId);
+
+    if (!normalizedUniversityId) {
       showToast("Please select a nearby university.", "error");
       return;
     }
@@ -84,6 +125,11 @@ export default function AddProperty() {
 
     if (!form.description.trim()) {
       showToast("Please enter a property description.", "error");
+      return;
+    }
+
+    if (!isValidImageValue(form.image)) {
+      showToast("Please enter a valid image URL, upload a valid image, or leave the image field empty.", "error");
       return;
     }
 
@@ -105,11 +151,11 @@ export default function AddProperty() {
           description: form.description.trim(),
           price_per_month: Number(form.pricePerMonth),
           property_type: form.type,
-          university_id: form.universityId,
+          university_id: normalizedUniversityId,
           bedrooms: Number(form.bedrooms),
           bathrooms: Number(form.bathrooms),
           furnished: form.furnished,
-          image: form.image.trim() || null,
+          image: form.image ? form.image.trim() : null,
           distance_km: Number(form.distanceKm) || 0,
         }),
       });
@@ -223,7 +269,7 @@ export default function AddProperty() {
                   <option value="">Select university</option>
 
                   {universities.map((university) => (
-                    <option key={university.id} value={university.id}>
+                    <option key={university.id} value={university.dbId}>
                       {university.name}
                     </option>
                   ))}
@@ -379,20 +425,35 @@ export default function AddProperty() {
             <div className="space-y-5 mt-5">
               <div>
                 <label className="block text-sm font-semibold text-ink mb-2">
-                  Property image URL
+                  Property image
                 </label>
 
-                <input
-                  type="url"
-                  value={form.image}
-                  onChange={update("image")}
-                  placeholder="https://example.com/property.jpg"
-                  className="w-full border border-slate-200 rounded-lg p-3.5"
-                />
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700 file:mr-4 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
+                  />
+
+                  <input
+                    type="text"
+                    value={form.image.startsWith("data:image") ? "" : form.image}
+                    onChange={update("image")}
+                    placeholder="Or paste an image URL"
+                    className="w-full border border-slate-200 rounded-lg p-3.5"
+                  />
+                </div>
 
                 <p className="text-xs text-muted mt-2">
-                  You can leave this empty and Qrib will use a default image.
+                  Upload a photo from your device, or paste a direct image URL. If both are empty, Qrib will use a default listing image.
                 </p>
+
+                {uploadingImage && (
+                  <p className="mt-2 text-xs font-semibold text-blue-600">
+                    Uploading image...
+                  </p>
+                )}
               </div>
 
               <div>

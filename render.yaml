@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: qrib-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: FRONTEND_URL
+        value: https://qrib-mu.vercel.app
