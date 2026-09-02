@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { Bell, MessageSquare } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -123,6 +124,22 @@ export default function Navbar() {
               <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
 
                 <Link
+                  to="/notifications"
+                  className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-brand"
+                  title="Notifications"
+                >
+                  <Bell size={20} />
+                </Link>
+
+                <Link
+                  to="/messages"
+                  className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-brand"
+                  title="Messages"
+                >
+                  <MessageSquare size={20} />
+                </Link>
+
+                <Link
                   to={dashboardPath}
                   className="text-sm font-bold text-slate-800"
                 >
@@ -233,6 +250,22 @@ export default function Navbar() {
                   className="text-sm font-semibold text-slate-800"
                 >
                   Help
+                </Link>
+
+                <Link
+                  to="/notifications"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Notifications
+                </Link>
+
+                <Link
+                  to="/messages"
+                  onClick={closeMenu}
+                  className="text-sm font-semibold text-slate-800"
+                >
+                  Messages
                 </Link>
 
                 <div className="border-t border-slate-100 pt-4">
