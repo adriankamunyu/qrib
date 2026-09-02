@@ -135,40 +135,19 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     if (loading) return;
 
+    if (!GOOGLE_CLIENT_ID) {
+      showToast(
+        "Google sign-in is not configured. Add VITE_GOOGLE_CLIENT_ID to your frontend environment.",
+        "error"
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
-      if (!GOOGLE_CLIENT_ID || !window.google?.accounts?.id) {
-        const demoGoogleUser = {
-          name: "Google Demo User",
-          email: "demo.google@qrib.app",
-          googleId: "google-demo-user-001",
-          role: "student",
-        };
-
-        const result = await googleLogin(demoGoogleUser);
-
-        if (!result || !result.ok) {
-          showToast(
-            result?.message || "Google sign-in failed.",
-            "error"
-          );
-          return;
-        }
-
-        showToast("Google sign-in successful.", "success");
-
-        if (result.user?.role === "admin") {
-          navigate("/admin/dashboard", { replace: true });
-          return;
-        }
-
-        if (result.user?.role === "host") {
-          navigate("/host/dashboard", { replace: true });
-          return;
-        }
-
-        navigate("/student/dashboard", { replace: true });
+      if (!window.google?.accounts?.id) {
+        showToast("Google sign-in script is still loading. Please try again in a moment.", "error");
         return;
       }
 
