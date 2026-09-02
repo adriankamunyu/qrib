@@ -53,6 +53,15 @@ export default function ProtectedRoute({ children, role }) {
       );
     }
 
+    if (user.role === "admin") {
+      return (
+        <Navigate
+          to="/admin/dashboard"
+          replace
+        />
+      );
+    }
+
     return <Navigate to="/login" replace />;
   }
 
