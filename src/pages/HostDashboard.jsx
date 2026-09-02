@@ -151,6 +151,10 @@ export default function HostDashboard() {
               Host information
             </Link>
 
+            <Link to="/host/verification" className="border border-amber-300 bg-amber-50 text-amber-700 px-4 py-2 rounded-lg font-semibold hover:bg-amber-100">
+              Host verification
+            </Link>
+
             <Link
               to={verificationComplete ? "/host/add-property" : "/host"}
               className={`px-4 py-2 rounded-lg font-bold ${verificationComplete ? "bg-brand text-white hover:opacity-90" : "bg-slate-200 text-slate-500 cursor-not-allowed"}`}
