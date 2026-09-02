@@ -1,196 +1,372 @@
-import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PropertyCard from "../components/PropertyCard";
 import MapView from "../components/MapView";
-import { listings } from "../data/listings";
-import { universities, getUniversity } from "../data/universities";
 
-const propertyTypes = ["Private Room", "Entire Studio", "Shared Flat"];
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
+
+function normalizeProperty(property) {
+  return {
+    id: property.id,
+    title: property.title || "Student Accommodation",
+    area: property.area || "",
+    city: property.city || "",
+    description: property.description || "",
+
+    image:
+      property.image ||
+      "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=900&q=80",
+
+    pricePerMonth: Number(property.price_per_month || 0),
+
+    propertyType:
+      property.property_type || "Accommodation",
+
+    type:
+      property.property_type || "Accommodation",
+
+    bedrooms: Number(property.bedrooms || 0),
+    bathrooms: Number(property.bathrooms || 0),
+
+    distanceKm: Number(property.distance_km || 0),
+    rating: Number(property.rating || 0),
+
+    furnished: Boolean(property.furnished),
+    verifiedHost: Boolean(property.verified_host),
+
+    hostId: property.host_id,
+    universityId: property.university_id,
+    universityName: property.university_name || "",
+
+    amenities: property.amenities || [],
+  };
+}
 
 export default function SearchResults() {
-  const [params] = useSearchParams();
-  const initialCity = params.get("city") || "";
-  const initialQuery = (params.get("q") || "").toLowerCase();
+  const [searchParams] = useSearchParams();
 
-  const [universityId, setUniversityId] = useState("");
-  const [city, setCity] = useState(initialCity);
-  const [maxPrice, setMaxPrice] = useState(30000);
-  const [types, setTypes] = useState([]);
-  const [sort, setSort] = useState("recommended");
-  const [selected, setSelected] = useState(null);
+  const query = searchParams.get("q") || "";
+  const area = searchParams.get("area") || "";
+  const city = searchParams.get("city") || "";
+  const budget = searchParams.get("budget") || "Any budget";
+  const propertyType =
+    searchParams.get("type") || "Any type";
 
-  const toggleType = (t) =>
-    setTypes((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = useMemo(() => {
-    let result = listings.filter((l) => {
-      const uni = getUniversity(l.universityId);
-      if (city && uni.city !== city) return false;
-      if (universityId && l.universityId !== universityId) return false;
-      if (l.pricePerMonth > maxPrice) return false;
-      if (types.length && !types.includes(l.type)) return false;
-      if (
-        initialQuery &&
-        !`${l.title} ${uni.name} ${l.area}`.toLowerCase().includes(initialQuery)
-      )
-        return false;
-      return true;
-    });
-    if (sort === "price-asc") result = [...result].sort((a, b) => a.pricePerMonth - b.pricePerMonth);
-    if (sort === "price-desc") result = [...result].sort((a, b) => b.pricePerMonth - a.pricePerMonth);
-    if (sort === "distance") result = [...result].sort((a, b) => a.distanceKm - b.distanceKm);
-    if (sort === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchProperties() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(
+          `${API_URL}/properties`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              data.message ||
+              "Unable to load properties."
+          );
+        }
+
+        const normalized = Array.isArray(data)
+          ? data.map(normalizeProperty)
+          : [];
+
+        if (!cancelled) {
+          setListings(normalized);
+        }
+      } catch (err) {
+        console.error("Search property loading error:", err);
+
+        if (!cancelled) {
+          setError(
+            err.message ||
+              "Unable to load accommodation."
+          );
+          setListings([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchProperties();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const results = useMemo(() => {
+    let result = [...listings];
+
+    const normalizedQuery = query
+      .trim()
+      .toLowerCase();
+
+    const normalizedArea = area
+      .trim()
+      .toLowerCase();
+
+    const normalizedCity = city
+      .trim()
+      .toLowerCase();
+
+    // SEARCH
+    if (normalizedQuery) {
+      result = result.filter((listing) => {
+        const values = [
+          listing.title,
+          listing.area,
+          listing.city,
+          listing.propertyType,
+          listing.universityName,
+          listing.description,
+        ];
+
+        return values
+          .filter(Boolean)
+          .some((value) =>
+            String(value)
+              .toLowerCase()
+              .includes(normalizedQuery)
+          );
+      });
+    }
+
+    // AREA
+    if (normalizedArea) {
+      result = result.filter((listing) =>
+        String(listing.area || "")
+          .toLowerCase()
+          .includes(normalizedArea)
+      );
+    }
+
+    // CITY
+    if (normalizedCity) {
+      result = result.filter((listing) =>
+        String(listing.city || "")
+          .toLowerCase()
+          .includes(normalizedCity)
+      );
+    }
+
+    // BUDGET
+    if (budget !== "Any budget") {
+      result = result.filter((listing) => {
+        const price = Number(
+          listing.pricePerMonth || 0
+        );
+
+        switch (budget) {
+          case "Under KSh 10,000":
+            return price < 10000;
+
+          case "KSh 10,000 - 15,000":
+            return (
+              price >= 10000 &&
+              price <= 15000
+            );
+
+          case "KSh 15,000 - 25,000":
+            return (
+              price > 15000 &&
+              price <= 25000
+            );
+
+          case "Above KSh 25,000":
+            return price > 25000;
+
+          default:
+            return true;
+        }
+      });
+    }
+
+    // PROPERTY TYPE
+    if (propertyType !== "Any type") {
+      result = result.filter((listing) => {
+        const type = String(
+          listing.propertyType ||
+            listing.type ||
+            ""
+        ).toLowerCase();
+
+        return (
+          type === propertyType.toLowerCase()
+        );
+      });
+    }
+
     return result;
-  }, [city, universityId, maxPrice, types, sort, initialQuery]);
+  }, [
+    listings,
+    query,
+    area,
+    city,
+    budget,
+    propertyType,
+  ]);
 
-  const mapUniversities = universityId ? universities.filter((u) => u.id === universityId) : universities;
-  const mapCenter = universityId
-    ? (() => {
-        const u = getUniversity(universityId);
-        return [u.lat, u.lng];
-      })()
-    : undefined;
+  const activeFilters = [
+    query,
+    area,
+    city,
+    budget !== "Any budget" ? budget : "",
+    propertyType !== "Any type"
+      ? propertyType
+      : "",
+  ].filter(Boolean);
 
   return (
-    <div className="w-full">
+    <div className="min-h-screen bg-[#f7f8fa]">
       <Navbar />
-      <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row">
-        {/* Sidebar filters */}
-        <aside className="w-full lg:w-[320px] shrink-0 p-8 border-r border-line">
-          <h2 className="font-extrabold text-xl text-ink mb-6">Filters</h2>
 
-          <div className="mb-8">
-            <label className="text-sm font-bold text-ink block mb-2">Near University</label>
-            <select
-              value={universityId}
-              onChange={(e) => setUniversityId(e.target.value)}
-              className="w-full border border-line rounded-lg p-3 text-sm"
-            >
-              <option value="">All institutions</option>
-              {universities.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} — {u.city}
-                </option>
-              ))}
-            </select>
-          </div>
+      <main className="mx-auto max-w-[1440px] px-6 py-10 lg:px-20">
 
-          <div className="mb-8">
-            <label className="text-sm font-bold text-ink block mb-2">
-              Max Price (KSh / month): {maxPrice.toLocaleString()}
-            </label>
-            <input
-              type="range"
-              min="5000"
-              max="30000"
-              step="500"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full accent-brand"
-            />
-          </div>
+        {/* HEADER */}
 
-          <div className="mb-8">
-            <label className="text-sm font-bold text-ink block mb-3">Property Type</label>
-            <div className="flex flex-col gap-3">
-              {propertyTypes.map((t) => (
-                <label key={t} className="flex items-center gap-3 text-sm text-ink">
-                  <input
-                    type="checkbox"
-                    checked={types.includes(t)}
-                    onChange={() => toggleType(t)}
-                    className="w-[18px] h-[18px] accent-brand rounded"
-                  />
-                  {t}
-                </label>
+        <div className="mb-8">
+          <Link
+            to="/student/dashboard"
+            className="text-sm font-semibold text-blue-600 hover:underline"
+          >
+            ← Back to dashboard
+          </Link>
+
+          <h1 className="mt-4 text-3xl font-black text-slate-900">
+            Find accommodation
+          </h1>
+
+          <p className="mt-2 text-slate-500">
+            Search student accommodation available
+            on Qrib.
+          </p>
+
+          {activeFilters.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {activeFilters.map((filter) => (
+                <span
+                  key={filter}
+                  className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700"
+                >
+                  {filter}
+                </span>
               ))}
             </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setUniversityId("");
-              setCity("");
-              setMaxPrice(30000);
-              setTypes([]);
-            }}
-            className="text-sm font-semibold text-brand hover:underline"
-          >
-            Clear all filters
-          </button>
-        </aside>
-
-        {/* Listings */}
-        <section className="flex-1 p-8">
-          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-            <p className="text-sm text-muted">
-              Showing {filtered.length} of {listings.length} student accommodations
-              {city ? ` in ${city}` : ""}
-            </p>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="border border-line rounded-lg px-3 py-2 text-sm font-semibold text-ink"
-            >
-              <option value="recommended">Sort by: Recommended</option>
-              <option value="distance">Closest to campus</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="rating">Top Rated</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-5">
-            {filtered.length === 0 && (
-              <p className="text-muted text-sm">No listings match those filters yet — try widening your search.</p>
-            )}
-            {filtered.map((l) => (
-              <div
-                key={l.id}
-                onMouseEnter={() => setSelected(l)}
-                className="flex flex-col sm:flex-row gap-5 border border-line rounded-xl overflow-hidden hover:shadow-md transition"
-              >
-                <img src={l.image} alt={l.title} className="w-full sm:w-[220px] h-[180px] object-cover" />
-                <div className="flex-1 p-5">
-                  <div className="flex items-center justify-between text-sm text-muted mb-2">
-                    <span>{l.area}</span>
-                    <span className="font-semibold text-ink">★ {l.rating}</span>
-                  </div>
-                  <h3 className="font-bold text-ink text-lg mb-2">{l.title}</h3>
-                  <p className="text-xs text-brand font-semibold mb-3">
-                    {l.distanceKm} km from {getUniversity(l.universityId)?.name}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {l.amenities.slice(0, 2).map((a) => (
-                      <span key={a} className="text-xs bg-panel text-muted px-2.5 py-1 rounded-full">
-                        {a}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="font-extrabold text-ink text-lg">
-                      KSh {l.pricePerMonth.toLocaleString()} <span className="text-sm font-medium text-muted">/ month</span>
-                    </p>
-                    <a
-                      href={`/property/${l.id}`}
-                      className="bg-brand text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-brand-dark transition"
-                    >
-                      View Details
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Map */}
-        <div className="w-full lg:w-[480px] h-[500px] lg:h-auto sticky top-20 shrink-0 p-4">
-          <MapView listings={filtered} universities={mapUniversities} center={mapCenter} onSelect={setSelected} />
+          )}
         </div>
-      </div>
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-6">
+            <p className="font-bold text-red-700">
+              Could not load properties
+            </p>
+
+            <p className="mt-2 text-sm text-red-600">
+              {error}
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                window.location.reload()
+              }
+              className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* RESULTS */}
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[420px_1fr]">
+
+          {/* MAP */}
+
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <MapView listings={results} />
+            </div>
+          </aside>
+
+          <section>
+            <div className="mb-5 flex items-center justify-between">
+              <p className="font-bold text-slate-900">
+                {loading
+                  ? "Loading..."
+                  : `${results.length} ${
+                      results.length === 1
+                        ? "property"
+                        : "properties"
+                    } found`}
+              </p>
+
+              <Link
+                to="/search"
+                className="text-sm font-bold text-blue-600 hover:text-blue-700"
+              >
+                Clear filters
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
+                <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+
+                <p className="mt-4 text-sm font-semibold text-slate-600">
+                  Loading accommodation...
+                </p>
+              </div>
+            ) : results.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+                <h2 className="text-xl font-black text-slate-900">
+                  No accommodation found
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  Try changing your search or filters.
+                </p>
+
+                <Link
+                  to="/search"
+                  className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700"
+                >
+                  View all properties
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {results.map((listing) => (
+                  <PropertyCard
+                    key={listing.id}
+                    listing={listing}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+
       <Footer />
     </div>
   );

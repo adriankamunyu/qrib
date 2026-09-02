@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Python backend
+backend/.venv/
+backend/__pycache__/
+backend/.env
+backend/**/*.pyc
+backend/instance/
+
+# Frontend env
+.env
+.env.local
+.env*
+
+.vercel/
+.vercel.production
+.env.vercel.production
