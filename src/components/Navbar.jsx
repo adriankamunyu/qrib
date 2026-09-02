@@ -11,7 +11,9 @@ export default function Navbar() {
   const dashboardPath =
     user?.role === "host"
       ? "/host/dashboard"
-      : "/student/dashboard";
+      : user?.role === "admin"
+        ? "/admin/dashboard"
+        : "/student/dashboard";
 
   const handleLogout = () => {
     logout();
@@ -109,6 +111,15 @@ export default function Navbar() {
                 </Link>
               )}
 
+              {user.role === "admin" && (
+                <Link
+                  to="/admin/dashboard"
+                  className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                >
+                  Admin portal
+                </Link>
+              )}
+
               <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
 
                 <Link
@@ -203,6 +214,16 @@ export default function Navbar() {
                     className="text-sm font-semibold text-slate-800"
                   >
                     Add property
+                  </Link>
+                )}
+
+                {user.role === "admin" && (
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={closeMenu}
+                    className="text-sm font-semibold text-slate-800"
+                  >
+                    Admin portal
                   </Link>
                 )}
 
