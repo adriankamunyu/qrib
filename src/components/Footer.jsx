@@ -27,6 +27,12 @@ export default function Footer() {
               <Link to="/help" className="hover:text-brand">
                 Help centre
               </Link>
+              <Link to="/search?type=bedsitter" className="hover:text-brand">
+                Bedsitters
+              </Link>
+              <Link to="/search?type=hostel" className="hover:text-brand">
+                Hostels
+              </Link>
             </div>
           </div>
 
