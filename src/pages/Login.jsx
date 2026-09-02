@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+const API_URL = import.meta.env.VITE_API_URL;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function Login() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const { login, signup, googleLogin, resetPassword } = useAuth();
+  const { login, signup } = useAuth();
   const { showToast } = useToast();
 
   const [mode, setMode] = useState(
@@ -19,78 +20,47 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("student");
   const [loading, setLoading] = useState(false);
+  const googleBtnRef = useRef(null);
 
+  // ---------------------------------------------------------
+  // GOOGLE AUTH
+  // ---------------------------------------------------------
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return;
+    if (!GOOGLE_CLIENT_ID || !window.google) return;
 
-    const initializeGoogle = () => {
-      if (!window.google?.accounts?.id) return;
-      if (window.__qrib_google_initialized) return;
-
-      window.__qrib_google_initialized = true;
-
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response) => {
-          const result = await googleLogin({
-            credential: response.credential,
-            role: "student",
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: async (response) => {
+        setLoading(true);
+        try {
+          const res = await fetch(`${API_URL}/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential }),
           });
-
-          if (!result || !result.ok) {
-            showToast(result?.message || "Google sign-in failed.", "error");
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || "Google sign-in failed.", "error");
             return;
           }
+          localStorage.setItem("qrib_access_token", data.access_token);
+          showToast("Signed in with Google.", "success");
+          navigate(data.user?.role === "host" ? "/host/dashboard" : "/student/dashboard", { replace: true });
+        } catch {
+          showToast("Google sign-in failed. Try again.", "error");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
 
-          showToast("Google sign-in successful.", "success");
-
-          if (result.user?.role === "admin") {
-            navigate("/admin/dashboard", { replace: true });
-            return;
-          }
-
-          if (result.user?.role === "host") {
-            navigate("/host/dashboard", { replace: true });
-            return;
-          }
-
-          navigate("/student/dashboard", { replace: true });
-        },
-      });
-
-      window.__qrib_google_initialized = true;
-    };
-
-    const scriptId = "google-gsi-script";
-    const existingScript = document.getElementById(scriptId);
-
-    if (existingScript) {
-      initializeGoogle();
-      return;
-    }
-
-    if (window.__qrib_google_script_loaded) {
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = scriptId;
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      window.__qrib_google_script_loaded = true;
-      initializeGoogle();
-    };
-
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [GOOGLE_CLIENT_ID, googleLogin, navigate, showToast]);
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme: "outline",
+      size: "large",
+      width: "100%",
+      text: "continue_with",
+    });
+  }, []);
 
   const [form, setForm] = useState({
     name: "",
@@ -131,63 +101,6 @@ export default function Login() {
   // ---------------------------------------------------------
   // SUBMIT
   // ---------------------------------------------------------
-
-  const handleGoogleLogin = async () => {
-    if (loading) return;
-
-    if (!GOOGLE_CLIENT_ID) {
-      showToast(
-        "Google sign-in is not configured. Add VITE_GOOGLE_CLIENT_ID to your frontend environment.",
-        "error"
-      );
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      if (!window.google?.accounts?.id) {
-        showToast("Google sign-in script is still loading. Please try again in a moment.", "error");
-        return;
-      }
-
-      window.google.accounts.id.prompt();
-    } catch (error) {
-      console.error("Google login error:", error);
-      showToast("Google sign-in is unavailable right now.", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    const email = window.prompt("Enter the email address for your account:");
-    if (!email) return;
-
-    const newPassword = window.prompt("Enter a new password (at least 6 characters):");
-    if (!newPassword) return;
-
-    setLoading(true);
-
-    try {
-      const result = await resetPassword({
-        email: email.trim(),
-        newPassword: newPassword.trim(),
-      });
-
-      if (!result || !result.ok) {
-        showToast(result?.message || "Password reset failed.", "error");
-        return;
-      }
-
-      showToast(result.message || "Password reset successful.", "success");
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      showToast("Password reset is unavailable right now.", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -607,43 +520,7 @@ export default function Login() {
           </div>
 
           {/* GOOGLE */}
-
-          <button
-            type="button"
-            disabled={loading}
-            onClick={handleGoogleLogin}
-            className="w-full border border-slate-200 bg-white flex items-center justify-center gap-3 p-3.5 rounded-xl font-semibold text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.065.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-              />
-
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"
-              />
-
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.34-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.77.43 3.45 1.18 4.93z"
-              />
-
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-
-            Continue with Google
-
-          </button>
+          <div ref={googleBtnRef} className="w-full" />
 
           {/* DIVIDER */}
 
@@ -737,7 +614,12 @@ export default function Login() {
                   <button
                     type="button"
                     disabled={loading}
-                    onClick={handleForgotPassword}
+                    onClick={() =>
+                      showToast(
+                        "Password reset is not connected yet.",
+                        "info"
+                      )
+                    }
                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition disabled:opacity-50"
                   >
                     Forgot password?
