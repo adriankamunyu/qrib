@@ -11,7 +11,9 @@ export default function Navbar() {
   const dashboardPath =
     user?.role === "host"
       ? "/host/dashboard"
-      : "/student/dashboard";
+      : user?.role === "admin"
+        ? "/admin/dashboard"
+        : "/student/dashboard";
 
   const handleLogout = () => {
     logout();
@@ -85,7 +87,7 @@ export default function Navbar() {
               {user.role === "student" && (
                 <>
                   <Link
-                    to="/search"
+                    to="/student/saved"
                     className="text-sm font-semibold text-slate-800 transition hover:text-brand"
                   >
                     Saved homes
@@ -106,6 +108,15 @@ export default function Navbar() {
                   className="text-sm font-semibold text-slate-800 transition hover:text-brand"
                 >
                   Add property
+                </Link>
+              )}
+
+              {user.role === "admin" && (
+                <Link
+                  to="/admin/dashboard"
+                  className="text-sm font-semibold text-slate-800 transition hover:text-brand"
+                >
+                  Admin portal
                 </Link>
               )}
 
@@ -203,6 +214,16 @@ export default function Navbar() {
                     className="text-sm font-semibold text-slate-800"
                   >
                     Add property
+                  </Link>
+                )}
+
+                {user.role === "admin" && (
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={closeMenu}
+                    className="text-sm font-semibold text-slate-800"
+                  >
+                    Admin portal
                   </Link>
                 )}
 

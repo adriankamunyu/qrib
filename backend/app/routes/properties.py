@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import func
 
 from app.extensions import db
-from app.models import Property, User
+from app.models import Property, User, University
 
 
 properties_bp = Blueprint(
@@ -36,6 +37,53 @@ def property_to_dict(property):
         "university_id": property.university_id,
         "created_at": property.created_at.isoformat(),
     }
+
+
+def normalize_university_id(value):
+    if value is None or value == "":
+        raise ValueError("University ID is required")
+
+    if isinstance(value, str):
+        value = value.strip()
+
+        if value.isdigit():
+            value = int(value)
+        else:
+            slug_map = {
+                "uon": "University of Nairobi",
+                "ku": "Kenyatta University",
+                "jkuat": "Jomo Kenyatta University of Agriculture and Technology",
+                "strathmore": "Strathmore University",
+                "usiu": "United States International University - Africa",
+                "moi": "Moi University",
+                "egerton": "Egerton University",
+            }
+
+            lookup_name = slug_map.get(value.lower())
+            if lookup_name:
+                university = University.query.filter(
+                    func.lower(University.name) == lookup_name.lower()
+                ).first()
+                if university:
+                    return university.id
+                raise ValueError(f"University '{lookup_name}' was not found")
+
+            try:
+                value = int(value)
+            except (TypeError, ValueError):
+                raise ValueError("University ID must be a valid integer or university slug")
+
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+
+    if not isinstance(value, int):
+        raise ValueError("University ID must be a valid integer or university slug")
+
+    university = db.session.get(University, value)
+    if not university:
+        raise ValueError(f"University with ID {value} was not found")
+
+    return value
 
 
 # ============================================================
@@ -76,6 +124,13 @@ def create_property():
             "fields": missing
         }), 400
 
+    try:
+        normalized_university_id = normalize_university_id(data["university_id"])
+    except ValueError as exc:
+        return jsonify({
+            "error": str(exc)
+        }), 400
+
     user_id = int(get_jwt_identity())
 
     user = db.session.get(User, user_id)
@@ -89,6 +144,12 @@ def create_property():
         return jsonify({
             "error": "Only hosts can create properties"
         }), 403
+
+    university_exists = db.session.get(University, normalized_university_id)
+    if not university_exists:
+        return jsonify({
+            "error": f"Selected university ID {normalized_university_id} is invalid or not available. Please choose a valid university."
+        }), 400
 
     property = Property(
         title=data["title"],
@@ -105,7 +166,7 @@ def create_property():
         rating=data.get("rating", 0),
         verified_host=False,
         host_id=user_id,
-        university_id=data["university_id"],
+        university_id=normalized_university_id,
     )
 
     db.session.add(property)
@@ -205,7 +266,6 @@ def update_property(property_id):
         "furnished",
         "image",
         "distance_km",
-        "rating",
     ]
 
     for field in allowed_fields:

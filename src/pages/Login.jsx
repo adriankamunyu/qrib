@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 export default function Login() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const { login, signup } = useAuth();
+  const { login, signup, googleLogin, resetPassword } = useAuth();
   const { showToast } = useToast();
 
   const [mode, setMode] = useState(
@@ -17,6 +19,78 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("student");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    const initializeGoogle = () => {
+      if (!window.google?.accounts?.id) return;
+      if (window.__qrib_google_initialized) return;
+
+      window.__qrib_google_initialized = true;
+
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async (response) => {
+          const result = await googleLogin({
+            credential: response.credential,
+            role: "student",
+          });
+
+          if (!result || !result.ok) {
+            showToast(result?.message || "Google sign-in failed.", "error");
+            return;
+          }
+
+          showToast("Google sign-in successful.", "success");
+
+          if (result.user?.role === "admin") {
+            navigate("/admin/dashboard", { replace: true });
+            return;
+          }
+
+          if (result.user?.role === "host") {
+            navigate("/host/dashboard", { replace: true });
+            return;
+          }
+
+          navigate("/student/dashboard", { replace: true });
+        },
+      });
+
+      window.__qrib_google_initialized = true;
+    };
+
+    const scriptId = "google-gsi-script";
+    const existingScript = document.getElementById(scriptId);
+
+    if (existingScript) {
+      initializeGoogle();
+      return;
+    }
+
+    if (window.__qrib_google_script_loaded) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      window.__qrib_google_script_loaded = true;
+      initializeGoogle();
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, [GOOGLE_CLIENT_ID, googleLogin, navigate, showToast]);
 
   const [form, setForm] = useState({
     name: "",
@@ -57,6 +131,63 @@ export default function Login() {
   // ---------------------------------------------------------
   // SUBMIT
   // ---------------------------------------------------------
+
+  const handleGoogleLogin = async () => {
+    if (loading) return;
+
+    if (!GOOGLE_CLIENT_ID) {
+      showToast(
+        "Google sign-in is not configured. Add VITE_GOOGLE_CLIENT_ID to your frontend environment.",
+        "error"
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (!window.google?.accounts?.id) {
+        showToast("Google sign-in script is still loading. Please try again in a moment.", "error");
+        return;
+      }
+
+      window.google.accounts.id.prompt();
+    } catch (error) {
+      console.error("Google login error:", error);
+      showToast("Google sign-in is unavailable right now.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const email = window.prompt("Enter the email address for your account:");
+    if (!email) return;
+
+    const newPassword = window.prompt("Enter a new password (at least 6 characters):");
+    if (!newPassword) return;
+
+    setLoading(true);
+
+    try {
+      const result = await resetPassword({
+        email: email.trim(),
+        newPassword: newPassword.trim(),
+      });
+
+      if (!result || !result.ok) {
+        showToast(result?.message || "Password reset failed.", "error");
+        return;
+      }
+
+      showToast(result.message || "Password reset successful.", "success");
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      showToast("Password reset is unavailable right now.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -480,12 +611,7 @@ export default function Login() {
           <button
             type="button"
             disabled={loading}
-            onClick={() =>
-              showToast(
-                "Google sign-in is not connected yet.",
-                "info"
-              )
-            }
+            onClick={handleGoogleLogin}
             className="w-full border border-slate-200 bg-white flex items-center justify-center gap-3 p-3.5 rounded-xl font-semibold text-slate-800 hover:bg-slate-50 hover:border-slate-300 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
 
@@ -611,12 +737,7 @@ export default function Login() {
                   <button
                     type="button"
                     disabled={loading}
-                    onClick={() =>
-                      showToast(
-                        "Password reset is not connected yet.",
-                        "info"
-                      )
-                    }
+                    onClick={handleForgotPassword}
                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition disabled:opacity-50"
                   >
                     Forgot password?

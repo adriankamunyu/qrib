@@ -1,8 +1,26 @@
 import { Link } from "react-router-dom";
 import { getUniversity } from "../data/universities";
 
+const fallbackImage =
+  "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80";
+
+function getSafeImageUrl(imageUrl) {
+  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+    return fallbackImage;
+  }
+
+  const trimmed = imageUrl.trim();
+
+  if (trimmed.startsWith("data:image/")) {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
 export default function PropertyCard({ listing }) {
   const uni = getUniversity(listing.universityId);
+  const imageSrc = getSafeImageUrl(listing.image);
 
   return (
     <Link
@@ -11,8 +29,12 @@ export default function PropertyCard({ listing }) {
     >
       <div className="relative h-[220px] overflow-hidden">
         <img
-          src={listing.image}
+          src={imageSrc}
           alt={listing.title}
+          loading="lazy"
+          onError={(event) => {
+            event.currentTarget.src = fallbackImage;
+          }}
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
 
