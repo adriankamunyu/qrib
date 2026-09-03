@@ -17,6 +17,10 @@ import StudentProfile from "./pages/StudentProfile";
 import SavedHomes from "./pages/SavedHomes";
 import StudentMessages from "./pages/StudentMessages";
 import AdminDashboard from "./pages/AdminDashboard";
+import HostVerification from "./pages/HostVerification";
+import PropertyReviews from "./pages/PropertyReviews";
+import NotificationsCenter from "./pages/NotificationsCenter";
+import Messages from "./pages/Messages";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function RoleHomeRedirect() {
@@ -95,6 +99,11 @@ function App() {
             />
 
             <Route
+              path="/property/:id/reviews"
+              element={<PropertyReviews />}
+            />
+
+            <Route
               path="/booking/:id"
               element={<BookingConfirmation />}
             />
@@ -158,6 +167,24 @@ function App() {
               }
             />
 
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsCenter />
+                </ProtectedRoute>
+              }
+            />
+
             {/* =================================================
                 HOST DASHBOARD
             ================================================== */}
@@ -189,6 +216,15 @@ function App() {
               element={
                 <ProtectedRoute role="host">
                   <AddProperty />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/host/verification"
+              element={
+                <ProtectedRoute role="host">
+                  <HostVerification />
                 </ProtectedRoute>
               }
             />
