@@ -45,6 +45,11 @@ from .routes.universities import universities_bp
 from .routes.bookings import bookings_bp
 from .routes.auth import auth_bp
 from .routes.payments import payments_bp
+from .routes.admin import admin_bp
+from .routes.reviews import reviews_bp
+from .routes.messages import messages_bp
+from .routes.host_verification import host_verification_bp
+from .routes.notifications import notifications_bp
 
 
 load_dotenv()
@@ -191,6 +196,11 @@ def create_app():
     app.register_blueprint(universities_bp)
     app.register_blueprint(bookings_bp)
     app.register_blueprint(payments_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(reviews_bp)
+    app.register_blueprint(messages_bp)
+    app.register_blueprint(host_verification_bp)
+    app.register_blueprint(notifications_bp)
 
     # ============================================================
     # FLASK SHELL
